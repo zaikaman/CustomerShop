@@ -11,6 +11,7 @@ namespace CustomerShop.Models
         public int Quantity { get; set; }
         public string? Unit { get; set; }
         public string? CategoryName { get; set; }
+        public string? ImageUrl { get; set; }
 
         public decimal Subtotal => Price * Quantity;
     }
@@ -38,7 +39,8 @@ namespace CustomerShop.Models
                     Price = product.Price,
                     Quantity = quantity,
                     Unit = product.Unit,
-                    CategoryName = product.Category?.CategoryName
+                    CategoryName = product.Category?.CategoryName,
+                    ImageUrl = product.ImageUrl
                 });
             }
         }

@@ -70,8 +70,15 @@ else
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Địa chỉ:</span>
-                                <span class="info-value">@(AuthService.CurrentCustomer?.Address ?? "Chưa cập nhật")</span>
+                                <span class="info-value @(string.IsNullOrEmpty(AuthService.CurrentCustomer?.Address) ? "text-danger" : "")">@(AuthService.CurrentCustomer?.Address ?? "Chưa cập nhật")</span>
                             </div>
+                            @if (string.IsNullOrEmpty(AuthService.CurrentCustomer?.Address))
+                            {
+                                <div class="address-warning">
+                                    <i class="hgi-stroke hgi-alert-02"></i>
+                                    <span>Vui lòng cập nhật địa chỉ giao hàng trong <a href="/profile">Thông tin cá nhân</a> để tiếp tục đặt hàng.</span>
+                                </div>
+                            }
                         </div>
                     </div>
 
@@ -118,23 +125,13 @@ else
                                     </div>
                                 </div>
                             </label>
-                            <label class="payment-option @(paymentMethod == "card" ? "selected" : "")">
-                                <input type="radio" name="payment" value="card" @onchange="@(() => paymentMethod = "card")" checked="@(paymentMethod == "card")" />
-                                <div class="payment-content">
-                                    <span class="payment-icon"><i class="hgi-stroke hgi-credit-card"></i></span>
-                                    <div class="payment-info">
-                                        <span class="payment-name">Thẻ tín dụng/Ghi nợ</span>
-                                        <span class="payment-desc">Visa, Mastercard, JCB</span>
-                                    </div>
-                                </div>
-                            </label>
                             <label class="payment-option @(paymentMethod == "bank_transfer" ? "selected" : "")">
                                 <input type="radio" name="payment" value="bank_transfer" @onchange="@(() => paymentMethod = "bank_transfer")" checked="@(paymentMethod == "bank_transfer")" />
                                 <div class="payment-content">
                                     <span class="payment-icon"><i class="hgi-stroke hgi-bank"></i></span>
                                     <div class="payment-info">
                                         <span class="payment-name">Chuyển khoản ngân hàng</span>
-                                        <span class="payment-desc">Chuyển khoản qua tài khoản ngân hàng</span>
+                                        <span class="payment-desc">Chuyển khoản qua MB Bank</span>
                                     </div>
                                 </div>
                             </label>
@@ -143,12 +140,80 @@ else
                                 <div class="payment-content">
                                     <span class="payment-icon"><i class="hgi-stroke hgi-wallet-03"></i></span>
                                     <div class="payment-info">
-                                        <span class="payment-name">Ví điện tử</span>
-                                        <span class="payment-desc">MoMo, ZaloPay, VNPay</span>
+                                        <span class="payment-name">Ví điện tử MoMo</span>
+                                        <span class="payment-desc">Thanh toán qua ví MoMo</span>
                                     </div>
                                 </div>
                             </label>
                         </div>
+
+                        @if (paymentMethod == "bank_transfer")
+                        {
+                            <div class="payment-detail-section">
+                                <div class="qr-container">
+                                    <img src="/images/mbbank.jpg" alt="MB Bank QR Code" class="qr-image" />
+                                </div>
+                                <div class="transfer-info">
+                                    <h3 class="transfer-title">Thông tin chuyển khoản</h3>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Ngân hàng:</span>
+                                        <span class="transfer-value">MB Bank</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Số tài khoản:</span>
+                                        <span class="transfer-value account-number">0931816175</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Tên người nhận:</span>
+                                        <span class="transfer-value">DINH PHUC THINH</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Số tiền:</span>
+                                        <span class="transfer-value amount">@((cart.TotalAmount - discountAmount).ToString("N0"))₫</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Nội dung:</span>
+                                        <span class="transfer-value content">@transferContent</span>
+                                    </div>
+                                </div>
+                                <div class="payment-warning">
+                                    <i class="hgi-stroke hgi-alert-02"></i>
+                                    <span>Vui lòng chuyển khoản <strong>ĐÚNG SỐ TIỀN</strong> và <strong>NỘI DUNG</strong> như trên. Chỉ nhấn <strong>"Đặt hàng"</strong> sau khi đã hoàn tất chuyển khoản. Đơn hàng sẽ được xác nhận thủ công bởi nhân viên.</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (paymentMethod == "e-wallet")
+                        {
+                            <div class="payment-detail-section momo">
+                                <div class="qr-container">
+                                    <img src="/images/momo.jpg" alt="MoMo QR Code" class="qr-image" />
+                                </div>
+                                <div class="transfer-info">
+                                    <h3 class="transfer-title">Thông tin chuyển khoản MoMo</h3>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Số điện thoại:</span>
+                                        <span class="transfer-value account-number">0931816175</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Tên người nhận:</span>
+                                        <span class="transfer-value">DINH PHUC THINH</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Số tiền:</span>
+                                        <span class="transfer-value amount">@((cart.TotalAmount - discountAmount).ToString("N0"))₫</span>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <span class="transfer-label">Nội dung:</span>
+                                        <span class="transfer-value content">@transferContent</span>
+                                    </div>
+                                </div>
+                                <div class="payment-warning momo-warning">
+                                    <i class="hgi-stroke hgi-alert-02"></i>
+                                    <span>Vui lòng chuyển khoản <strong>ĐÚNG SỐ TIỀN</strong> và <strong>NỘI DUNG</strong> như trên. Chỉ nhấn <strong>"Đặt hàng"</strong> sau khi đã hoàn tất chuyển khoản. Đơn hàng sẽ được xác nhận thủ công bởi nhân viên.</span>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -166,7 +231,7 @@ else
                                     </div>
                                     <div class="item-details">
                                         <span class="item-name">@item.ProductName</span>
-                                        <span class="item-qty">x@item.Quantity</span>
+                                        <span class="item-qty">x @item.Quantity</span>
                                     </div>
                                     <span class="item-total">@item.Subtotal.ToString("N0")₫</span>
                                 </div>
@@ -200,7 +265,7 @@ else
                             <span class="total-amount">@((cart.TotalAmount - discountAmount).ToString("N0"))₫</span>
                         </div>
 
-                        <button class="btn btn-primary btn-lg place-order-btn" @onclick="PlaceOrder" disabled="@isPlacingOrder">
+                        <button class="btn btn-primary btn-lg place-order-btn" @onclick="PlaceOrder" disabled="@(isPlacingOrder || string.IsNullOrEmpty(AuthService.CurrentCustomer?.Address))">
                             @if (isPlacingOrder)
                             {
                                 <span class="spinner"></span>
@@ -233,11 +298,30 @@ else
     private bool isApplyingPromo = false;
     private bool isPlacingOrder = false;
     private bool isRedirecting = false;
+    private string transferContent = "";
+
+    private void GenerateTransferContent()
+    {
+        // Tạo nội dung chuyển khoản dựa trên thông tin khách hàng và thời gian
+        var timestamp = DateTime.Now.ToString("ddMMHHmm");
+        var customerId = AuthService.CurrentCustomer?.CustomerId ?? 0;
+        transferContent = $"STUFFSUS {customerId} {timestamp}";
+    }
 
     protected override void OnInitialized()
     {
-        cart = CartService.GetCart();
         CartService.OnChange += RefreshCart;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CartService.LoadCartFromStorageAsync();
+            cart = CartService.GetCart();
+            GenerateTransferContent();
+            StateHasChanged();
+        }
     }
 
     private void RefreshCart()
@@ -295,6 +379,13 @@ else
         if (AuthService.CurrentCustomer == null)
         {
             Navigation.NavigateTo("/login?returnUrl=/checkout", forceLoad: false);
+            return;
+        }
+
+        // Kiểm tra địa chỉ giao hàng
+        if (string.IsNullOrEmpty(AuthService.CurrentCustomer.Address))
+        {
+            errorMessage = "Vui lòng cập nhật địa chỉ giao hàng trong Thông tin cá nhân để tiếp tục đặt hàng.";
             return;
         }
 

@@ -107,6 +107,11 @@
     color: #c2410c;
 }
 
+.order-status.status-paid {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
 .order-status.status-processing {
     background: #eff6ff;
     color: #1d4ed8;

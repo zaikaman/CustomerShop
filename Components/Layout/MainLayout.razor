@@ -1,7 +1,10 @@
 ﻿@inherits LayoutComponentBase
-@implements IDisposable
-@inject ICartService CartService
 @inject NavigationManager Navigation
+@inject ICartService CartService
+@inject ICustomerAuthService AuthService
+@implements IDisposable
+
+<ToastContainer />
 
 <div class="shop-layout">
     <!-- Header -->
@@ -29,17 +32,7 @@
                     </svg>
                 </button>
                 
-                <a href="/cart" class="action-btn cart-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="8" cy="21" r="1"></circle>
-                        <circle cx="19" cy="21" r="1"></circle>
-                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-                    </svg>
-                    @if (cartItemCount > 0)
-                    {
-                        <span class="cart-badge">@cartItemCount</span>
-                    }
-                </a>
+                <CartIcon />
 
                 <HeaderAuth />
             </div>
@@ -107,20 +100,25 @@
 </div>
 
 @code {
-    private int cartItemCount = 0;
     private bool showSearch = false;
     private string searchQuery = "";
+    private bool _isInitialized = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        cartItemCount = CartService.GetCartItemCount();
-        CartService.OnChange += UpdateCartCount;
+        if (firstRender && !_isInitialized)
+        {
+            _isInitialized = true;
+            // Tải dữ liệu từ LocalStorage sau khi render
+            await CartService.LoadCartFromStorageAsync();
+            await AuthService.LoadAuthStateFromStorageAsync();
+            StateHasChanged();
+        }
     }
 
-    private void UpdateCartCount()
+    public void Dispose()
     {
-        cartItemCount = CartService.GetCartItemCount();
-        InvokeAsync(StateHasChanged);
+        // Cleanup nếu cần
     }
 
     private bool IsActive(string path)
@@ -150,10 +148,5 @@
             showSearch = false;
             searchQuery = "";
         }
-    }
-
-    public void Dispose()
-    {
-        CartService.OnChange -= UpdateCartCount;
     }
 }

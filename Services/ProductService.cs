@@ -13,6 +13,7 @@ namespace CustomerShop.Services
         Task<List<Category>> GetAllCategoriesAsync();
         Task<List<Product>> GetProductsWithFiltersAsync(int? categoryId, string? searchTerm, string? sortBy, int page, int pageSize);
         Task<int> GetTotalProductsCountAsync(int? categoryId, string? searchTerm);
+        Task<(List<Product> Products, int TotalCount, List<Category> Categories)> GetShopDataAsync(int? categoryId, string? searchTerm, string? sortBy, int page, int pageSize);
     }
 
     public class ProductService : IProductService
@@ -122,7 +123,6 @@ namespace CustomerShop.Services
         {
             await using var context = await _contextFactory.CreateDbContextAsync();
             var query = context.Products
-                .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)
                 .AsQueryable();
@@ -136,10 +136,81 @@ namespace CustomerShop.Services
             {
                 var lowerSearchTerm = searchTerm.ToLower();
                 query = query.Where(p => p.ProductName.ToLower().Contains(lowerSearchTerm) ||
-                                        (p.Category != null && p.Category.CategoryName.ToLower().Contains(lowerSearchTerm)));
+                                        context.Categories.Any(c => c.CategoryId == p.CategoryId && c.CategoryName.ToLower().Contains(lowerSearchTerm)));
             }
 
             return await query.CountAsync();
+        }
+
+        public async Task<(List<Product> Products, int TotalCount, List<Category> Categories)> GetShopDataAsync(
+            int? categoryId, string? searchTerm, string? sortBy, int page, int pageSize)
+        {
+            // Chạy 3 query song song với 3 DbContext riêng biệt
+            var categoriesTask = Task.Run(async () =>
+            {
+                await using var ctx = await _contextFactory.CreateDbContextAsync();
+                return await ctx.Categories.OrderBy(c => c.CategoryName).ToListAsync();
+            });
+
+            var countTask = Task.Run(async () =>
+            {
+                await using var ctx = await _contextFactory.CreateDbContextAsync();
+                var query = ctx.Products
+                    .Include(p => p.Inventory)
+                    .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)
+                    .AsQueryable();
+
+                if (categoryId.HasValue && categoryId > 0)
+                    query = query.Where(p => p.CategoryId == categoryId);
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    var lowerSearchTerm = searchTerm.ToLower();
+                    query = query.Where(p => p.ProductName.ToLower().Contains(lowerSearchTerm) ||
+                                            ctx.Categories.Any(c => c.CategoryId == p.CategoryId && c.CategoryName.ToLower().Contains(lowerSearchTerm)));
+                }
+
+                return await query.CountAsync();
+            });
+
+            var productsTask = Task.Run(async () =>
+            {
+                await using var ctx = await _contextFactory.CreateDbContextAsync();
+                var query = ctx.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Inventory)
+                    .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)
+                    .AsQueryable();
+
+                if (categoryId.HasValue && categoryId > 0)
+                    query = query.Where(p => p.CategoryId == categoryId);
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    var lowerSearchTerm = searchTerm.ToLower();
+                    query = query.Where(p => p.ProductName.ToLower().Contains(lowerSearchTerm) ||
+                                            (p.Category != null && p.Category.CategoryName.ToLower().Contains(lowerSearchTerm)));
+                }
+
+                query = sortBy switch
+                {
+                    "price_asc" => query.OrderBy(p => p.Price),
+                    "price_desc" => query.OrderByDescending(p => p.Price),
+                    "name_asc" => query.OrderBy(p => p.ProductName),
+                    "name_desc" => query.OrderByDescending(p => p.ProductName),
+                    _ => query.OrderByDescending(p => p.CreatedAt)
+                };
+
+                return await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            });
+
+            // Đợi tất cả cùng lúc
+            await Task.WhenAll(categoriesTask, countTask, productsTask);
+
+            return (productsTask.Result, countTask.Result, categoriesTask.Result);
         }
     }
 }

@@ -12,26 +12,81 @@ namespace CustomerShop.Services
         Task<bool> UpdateCustomerAsync(Customer customer);
         Task<bool> UpdateProfileAsync(string name, string? phone, string? address);
         Task<bool> ChangePasswordAsync(string currentPassword, string newPassword);
+        Task LoadAuthStateFromStorageAsync();
         Customer? CurrentCustomer { get; }
         bool IsAuthenticated { get; }
-        void Logout();
+        Task LogoutAsync();
         event Action? OnAuthStateChanged;
     }
 
     public class CustomerAuthService : ICustomerAuthService
     {
         private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
+        private readonly ILocalStorageService _localStorage;
         private Customer? _currentCustomer;
+        private const string AUTH_STORAGE_KEY = "customer_auth";
+        private bool _isLoaded = false;
 
         public event Action? OnAuthStateChanged;
 
-        public CustomerAuthService(IDbContextFactory<ApplicationDbContext> contextFactory)
+        public CustomerAuthService(IDbContextFactory<ApplicationDbContext> contextFactory, ILocalStorageService localStorage)
         {
             _contextFactory = contextFactory;
+            _localStorage = localStorage;
         }
 
         public Customer? CurrentCustomer => _currentCustomer;
         public bool IsAuthenticated => _currentCustomer != null;
+
+        /// <summary>
+        /// Tải trạng thái đăng nhập từ LocalStorage
+        /// </summary>
+        public async Task LoadAuthStateFromStorageAsync()
+        {
+            if (_isLoaded) return;
+            
+            try
+            {
+                var customerId = await _localStorage.GetItemAsync<int?>(AUTH_STORAGE_KEY);
+                if (customerId.HasValue && customerId.Value > 0)
+                {
+                    await using var context = await _contextFactory.CreateDbContextAsync();
+                    var customer = await context.Customers.FindAsync(customerId.Value);
+                    if (customer != null)
+                    {
+                        _currentCustomer = customer;
+                        NotifyAuthStateChanged();
+                    }
+                }
+                _isLoaded = true;
+            }
+            catch
+            {
+                _isLoaded = true;
+            }
+        }
+
+        /// <summary>
+        /// Lưu trạng thái đăng nhập vào LocalStorage
+        /// </summary>
+        private async Task SaveAuthStateAsync()
+        {
+            try
+            {
+                if (_currentCustomer != null)
+                {
+                    await _localStorage.SetItemAsync(AUTH_STORAGE_KEY, _currentCustomer.CustomerId);
+                }
+                else
+                {
+                    await _localStorage.RemoveItemAsync(AUTH_STORAGE_KEY);
+                }
+            }
+            catch
+            {
+                // Bỏ qua lỗi
+            }
+        }
 
         public async Task<Customer?> LoginAsync(string email, string password)
         {
@@ -42,6 +97,7 @@ namespace CustomerShop.Services
             if (customer != null)
             {
                 _currentCustomer = customer;
+                await SaveAuthStateAsync();
                 NotifyAuthStateChanged();
             }
             
@@ -87,6 +143,7 @@ namespace CustomerShop.Services
 
             // Tự động đăng nhập sau khi đăng ký
             _currentCustomer = customer;
+            await SaveAuthStateAsync();
             NotifyAuthStateChanged();
 
             return (true, "Đăng ký thành công!");
@@ -124,9 +181,10 @@ namespace CustomerShop.Services
             }
         }
 
-        public void Logout()
+        public async Task LogoutAsync()
         {
             _currentCustomer = null;
+            await _localStorage.RemoveItemAsync(AUTH_STORAGE_KEY);
             NotifyAuthStateChanged();
         }
 

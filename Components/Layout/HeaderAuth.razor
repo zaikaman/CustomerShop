@@ -40,6 +40,15 @@ else
         AuthService.OnAuthStateChanged += HandleAuthStateChanged;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthService.LoadAuthStateFromStorageAsync();
+            StateHasChanged();
+        }
+    }
+
     private void HandleAuthStateChanged()
     {
         InvokeAsync(StateHasChanged);
@@ -50,9 +59,9 @@ else
         showUserMenu = !showUserMenu;
     }
 
-    private void HandleLogout()
+    private async Task HandleLogout()
     {
-        AuthService.Logout();
+        await AuthService.LogoutAsync();
         showUserMenu = false;
         Navigation.NavigateTo("/", forceLoad: false);
     }

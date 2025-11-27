@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CustomerShop.Models
 {
@@ -30,6 +31,11 @@ namespace CustomerShop.Models
         public string Unit { get; set; } = "pcs";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        [Column("image_url")]
+        [Display(Name = "URL Hình ảnh")]
+        [StringLength(500, ErrorMessage = "URL hình ảnh không được vượt quá 500 ký tự")]
+        public string? ImageUrl { get; set; }
 
         // Navigation properties
         public Category? Category { get; set; }

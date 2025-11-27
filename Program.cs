@@ -22,6 +22,9 @@ var connectionString = $"Server={host};Port={port};Database={database};User={use
 builder.Services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
+// Đăng ký LocalStorageService để lưu trữ dữ liệu trên browser
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+
 // Đăng ký Services
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICustomerAuthService, CustomerAuthService>();
@@ -29,6 +32,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 
 // CartService cần là Scoped để mỗi user có giỏ hàng riêng
 builder.Services.AddScoped<ICartService, CartService>();
+
+// ToastService cho thông báo
+builder.Services.AddScoped<IToastService, ToastService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

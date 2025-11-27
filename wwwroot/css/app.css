@@ -507,7 +507,7 @@ button {
 
 /* Links Section */
 .footer-links-section {
-    background-color: var(--color-white);
+    background-color: rgb(250, 249, 247);
     padding-top: var(--space-3xl);
 }
 

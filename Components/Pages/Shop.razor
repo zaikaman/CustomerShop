@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IProductService ProductService
 @inject ICartService CartService
+@inject IToastService ToastService
 @inject NavigationManager Navigation
 
 <PageTitle>Cửa hàng - Stuffsus</PageTitle>
@@ -10,7 +11,7 @@
     <!-- Hero Banner -->
     <div class="shop-hero">
         <div class="shop-hero-content">
-            <h1>Cửa hàng</h1>
+            <h1 class="shop-hero-title">Cửa hàng</h1>
             <p>Khám phá bộ sưu tập đa dạng của chúng tôi</p>
         </div>
     </div>
@@ -121,13 +122,20 @@
                             {
                                 <div class="product-card">
                                     <a href="/product/@product.ProductId" class="product-image">
-                                        <div class="product-placeholder">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                                <polyline points="21 15 16 10 5 21"></polyline>
-                                            </svg>
-                                        </div>
+                                        @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                        {
+                                            <img src="@product.ImageUrl" alt="@product.ProductName" class="product-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="product-placeholder">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                                </svg>
+                                            </div>
+                                        }
                                         <span class="product-badge">@product.Category?.CategoryName</span>
                                     </a>
                                     <div class="product-info">
@@ -229,8 +237,7 @@
         selectedCategory = Category;
         searchTerm = Search ?? "";
         
-        categories = await ProductService.GetAllCategoriesAsync();
-        await LoadProducts();
+        await LoadShopData();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -244,6 +251,29 @@
         }
     }
 
+    private async Task LoadShopData()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Load tất cả data cùng lúc: products, count, và categories
+            var result = await ProductService.GetShopDataAsync(
+                selectedCategory, searchTerm, sortBy, currentPage, pageSize);
+            
+            products = result.Products;
+            totalProducts = result.TotalCount;
+            categories = result.Categories;
+            totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task LoadProducts()
     {
         isLoading = true;
@@ -251,9 +281,15 @@
         
         try
         {
-            products = await ProductService.GetProductsWithFiltersAsync(
+            // Load products và count song song
+            var productsTask = ProductService.GetProductsWithFiltersAsync(
                 selectedCategory, searchTerm, sortBy, currentPage, pageSize);
-            totalProducts = await ProductService.GetTotalProductsCountAsync(selectedCategory, searchTerm);
+            var countTask = ProductService.GetTotalProductsCountAsync(selectedCategory, searchTerm);
+            
+            await Task.WhenAll(productsTask, countTask);
+            
+            products = productsTask.Result;
+            totalProducts = countTask.Result;
             totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
         }
         finally
@@ -326,6 +362,7 @@
         if (product.Inventory?.Quantity > 0)
         {
             CartService.AddToCart(product);
+            ToastService.ShowSuccess($"Đã thêm \"{product.ProductName}\" vào giỏ hàng", "Giỏ hàng");
         }
     }
 

@@ -311,9 +311,9 @@ else
         }
     }
 
-    private void HandleLogout()
+    private async Task HandleLogout()
     {
-        AuthService.Logout();
+        await AuthService.LogoutAsync();
         Navigation.NavigateTo("/", forceLoad: false);
     }
 
