@@ -202,6 +202,7 @@ namespace CustomerShop.Data
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
                 entity.Property(e => e.Amount).HasColumnName("amount").HasColumnType("decimal(10,2)");
                 entity.Property(e => e.PaymentMethod).HasColumnName("payment_method").HasMaxLength(50);
+                entity.Property(e => e.PaymentStatus).HasColumnName("status").HasMaxLength(20);
                 entity.Property(e => e.PaymentDate).HasColumnName("payment_date");
 
                 // Quan hệ với Order

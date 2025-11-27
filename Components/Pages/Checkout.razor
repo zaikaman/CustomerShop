@@ -101,7 +101,7 @@ else
                             <label class="payment-option @(paymentMethod == "cash" ? "selected" : "")">
                                 <input type="radio" name="payment" value="cash" @onchange="@(() => paymentMethod = "cash")" checked="@(paymentMethod == "cash")" />
                                 <div class="payment-content">
-                                    <span class="payment-icon">💵</span>
+                                    <span class="payment-icon"><i class="hgi-stroke hgi-money-01"></i></span>
                                     <div class="payment-info">
                                         <span class="payment-name">Tiền mặt</span>
                                         <span class="payment-desc">Thanh toán khi nhận hàng (COD)</span>
@@ -111,7 +111,7 @@ else
                             <label class="payment-option @(paymentMethod == "card" ? "selected" : "")">
                                 <input type="radio" name="payment" value="card" @onchange="@(() => paymentMethod = "card")" checked="@(paymentMethod == "card")" />
                                 <div class="payment-content">
-                                    <span class="payment-icon">💳</span>
+                                    <span class="payment-icon"><i class="hgi-stroke hgi-credit-card"></i></span>
                                     <div class="payment-info">
                                         <span class="payment-name">Thẻ tín dụng/Ghi nợ</span>
                                         <span class="payment-desc">Visa, Mastercard, JCB</span>
@@ -121,7 +121,7 @@ else
                             <label class="payment-option @(paymentMethod == "bank_transfer" ? "selected" : "")">
                                 <input type="radio" name="payment" value="bank_transfer" @onchange="@(() => paymentMethod = "bank_transfer")" checked="@(paymentMethod == "bank_transfer")" />
                                 <div class="payment-content">
-                                    <span class="payment-icon">🏦</span>
+                                    <span class="payment-icon"><i class="hgi-stroke hgi-bank"></i></span>
                                     <div class="payment-info">
                                         <span class="payment-name">Chuyển khoản ngân hàng</span>
                                         <span class="payment-desc">Chuyển khoản qua tài khoản ngân hàng</span>
@@ -131,7 +131,7 @@ else
                             <label class="payment-option @(paymentMethod == "e-wallet" ? "selected" : "")">
                                 <input type="radio" name="payment" value="e-wallet" @onchange="@(() => paymentMethod = "e-wallet")" checked="@(paymentMethod == "e-wallet")" />
                                 <div class="payment-content">
-                                    <span class="payment-icon">📱</span>
+                                    <span class="payment-icon"><i class="hgi-stroke hgi-wallet-03"></i></span>
                                     <div class="payment-info">
                                         <span class="payment-name">Ví điện tử</span>
                                         <span class="payment-desc">MoMo, ZaloPay, VNPay</span>
@@ -152,7 +152,7 @@ else
                             {
                                 <div class="order-item">
                                     <div class="item-image-small">
-                                        <div class="placeholder-small">📦</div>
+                                        <div class="placeholder-small"><i class="hgi-stroke hgi-package"></i></div>
                                     </div>
                                     <div class="item-details">
                                         <span class="item-name">@item.ProductName</span>

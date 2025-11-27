@@ -17,16 +17,17 @@ namespace CustomerShop.Services
 
     public class ProductService : IProductService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public ProductService(ApplicationDbContext context)
+        public ProductService(IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task<List<Product>> GetAllProductsAsync()
         {
-            return await _context.Products
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)
@@ -36,7 +37,8 @@ namespace CustomerShop.Services
 
         public async Task<List<Product>> GetProductsByCategoryAsync(int categoryId)
         {
-            return await _context.Products
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => p.CategoryId == categoryId && p.Inventory != null && p.Inventory.Quantity > 0)
@@ -46,8 +48,9 @@ namespace CustomerShop.Services
 
         public async Task<List<Product>> SearchProductsAsync(string searchTerm)
         {
+            await using var context = await _contextFactory.CreateDbContextAsync();
             var lowerSearchTerm = searchTerm.ToLower();
-            return await _context.Products
+            return await context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => (p.ProductName.ToLower().Contains(lowerSearchTerm) || 
@@ -59,7 +62,8 @@ namespace CustomerShop.Services
 
         public async Task<Product?> GetProductByIdAsync(int id)
         {
-            return await _context.Products
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
                 .Include(p => p.Inventory)
@@ -68,14 +72,16 @@ namespace CustomerShop.Services
 
         public async Task<List<Category>> GetAllCategoriesAsync()
         {
-            return await _context.Categories
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Categories
                 .OrderBy(c => c.CategoryName)
                 .ToListAsync();
         }
 
         public async Task<List<Product>> GetProductsWithFiltersAsync(int? categoryId, string? searchTerm, string? sortBy, int page, int pageSize)
         {
-            var query = _context.Products
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var query = context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)
@@ -114,7 +120,8 @@ namespace CustomerShop.Services
 
         public async Task<int> GetTotalProductsCountAsync(int? categoryId, string? searchTerm)
         {
-            var query = _context.Products
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var query = context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Inventory)
                 .Where(p => p.Inventory != null && p.Inventory.Quantity > 0)

@@ -30,7 +30,7 @@ else
             else if (orders == null || orders.Count == 0)
             {
                 <div class="empty-orders">
-                    <div class="empty-icon">📦</div>
+                    <div class="empty-icon"><i class="hgi-stroke hgi-package"></i></div>
                     <h2>Chưa có đơn hàng nào</h2>
                     <p>Bạn chưa đặt đơn hàng nào. Hãy khám phá các sản phẩm của chúng tôi!</p>
                     <a href="/shop" class="btn btn-primary btn-lg">Bắt đầu mua sắm</a>
@@ -58,7 +58,7 @@ else
                                     @foreach (var item in order.OrderItems.Take(3))
                                     {
                                         <div class="item-preview">
-                                            <div class="item-image-tiny">📦</div>
+                                            <div class="item-image-tiny"><i class="hgi-stroke hgi-package"></i></div>
                                             <div class="item-detail">
                                                 <span class="item-name">@item.Product?.ProductName</span>
                                                 <span class="item-qty">x@item.Quantity</span>
@@ -102,7 +102,7 @@ else
                                             @foreach (var item in order.OrderItems)
                                             {
                                                 <div class="detail-item">
-                                                    <div class="item-image-small">📦</div>
+                                                    <div class="item-image-small"><i class="hgi-stroke hgi-package"></i></div>
                                                     <div class="item-info">
                                                         <span class="name">@item.Product?.ProductName</span>
                                                         <span class="price">@item.Price.ToString("N0")₫ x @item.Quantity</span>

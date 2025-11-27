@@ -14,7 +14,7 @@
     <div class="hero-content">
         <div class="hero-text">
             <span class="hero-tag">Cửa hàng bán lẻ</span>
-            <h1 class="hero-title">Shop</h1>
+            <h1 class="hero-title">Cửa hàng</h1>
             <p class="hero-subtitle">Khám phá bộ sưu tập sản phẩm chất lượng cao với giá tốt nhất</p>
             <a href="/shop" class="btn btn-primary btn-lg">Mua sắm ngay</a>
         </div>
@@ -24,10 +24,10 @@
 <!-- Search Bar Section -->
 <section class="search-section">
     <div class="search-box">
-        <h2 class="search-title">Give All You Need</h2>
+        <h2 class="search-title">Tất cả những gì bạn cần</h2>
         <div class="search-form">
-            <input type="text" placeholder="Search on Stuffsus" @bind="searchQuery" @onkeydown="HandleSearchKeyDown" />
-            <button class="btn btn-primary" @onclick="PerformSearch">Search</button>
+            <input type="text" placeholder="Tìm kiếm trên Stuffsus" @bind="searchQuery" @onkeydown="HandleSearchKeyDown" />
+            <button class="btn btn-primary" @onclick="PerformSearch">Tìm kiếm</button>
         </div>
     </div>
 </section>
@@ -43,7 +43,7 @@
                 {
                     <a href="/shop?category=@category.CategoryId" class="category-card">
                         <div class="category-icon">
-                            @GetCategoryIcon(category.CategoryName)
+                            @((MarkupString)GetCategoryIcon(category.CategoryName))
                         </div>
                         <span class="category-name">@category.CategoryName</span>
                     </a>
@@ -119,7 +119,7 @@
 <section class="recommendations-section">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Explore our recommendations</h2>
+            <h2 class="section-title">Khám phá gợi ý của chúng tôi</h2>
             <div class="nav-arrows">
                 <button class="nav-arrow">←</button>
                 <button class="nav-arrow">→</button>
@@ -146,7 +146,7 @@
                             <h3 class="recommendation-name">@product.ProductName</h3>
                             <div class="recommendation-rating">
                                 ★ 4.@((product.ProductId % 5) + 5) 
-                                <span>(@((product.ProductId * 17) % 500 + 100) Reviews)</span>
+                                <span>(@((product.ProductId * 17) % 500 + 100) đánh giá)</span>
                             </div>
                             <span class="recommendation-price">@product.Price.ToString("N0")₫</span>
                             <div class="recommendation-actions">
@@ -211,12 +211,12 @@
     {
         return categoryName?.ToLower() switch
         {
-            "đồ uống" => "🥤",
-            "bánh kẹo" => "🍪",
-            "gia vị" => "🧂",
-            "đồ gia dụng" => "🏠",
-            "mỹ phẩm" => "💄",
-            _ => "📦"
+            "đồ uống" => "<i class='hgi-stroke hgi-soft-drink-01'></i>",
+            "bánh kẹo" => "<i class='hgi-stroke hgi-cookies'></i>",
+            "gia vị" => "<i class='hgi-stroke hgi-salt-and-pepper'></i>",
+            "đồ gia dụng" => "<i class='hgi-stroke hgi-home-01'></i>",
+            "mỹ phẩm" => "<i class='hgi-stroke hgi-lipstick'></i>",
+            _ => "<i class='hgi-stroke hgi-package'></i>"
         };
     }
 }

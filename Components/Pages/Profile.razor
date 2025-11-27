@@ -32,15 +32,15 @@ else
 
                     <nav class="profile-nav">
                         <a href="/profile" class="nav-item active">
-                            <span class="icon">👤</span>
+                            <span class="icon"><i class="hgi-stroke hgi-user"></i></span>
                             Thông tin cá nhân
                         </a>
                         <a href="/orders" class="nav-item">
-                            <span class="icon">📦</span>
+                            <span class="icon"><i class="hgi-stroke hgi-package"></i></span>
                             Đơn hàng của tôi
                         </a>
                         <button class="nav-item logout-btn" @onclick="HandleLogout">
-                            <span class="icon">🚪</span>
+                            <span class="icon"><i class="hgi-stroke hgi-logout-01"></i></span>
                             Đăng xuất
                         </button>
                     </nav>
@@ -68,7 +68,7 @@ else
                             @if (!isEditing)
                             {
                                 <button class="btn btn-secondary btn-sm" @onclick="StartEditing">
-                                    ✏️ Chỉnh sửa
+                                    <i class="hgi-stroke hgi-pencil-edit-01"></i> Chỉnh sửa
                                 </button>
                             }
                         </div>
@@ -175,7 +175,7 @@ else
                             <div class="change-password-cta">
                                 <p>Để bảo mật tài khoản, bạn nên đổi mật khẩu định kỳ.</p>
                                 <button class="btn btn-secondary" @onclick="@(() => showChangePassword = true)">
-                                    🔒 Đổi mật khẩu
+                                    <i class="hgi-stroke hgi-square-lock-02"></i> Đổi mật khẩu
                                 </button>
                             </div>
                         }

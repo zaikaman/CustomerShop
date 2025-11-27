@@ -20,14 +20,14 @@ namespace CustomerShop.Services
 
     public class CustomerAuthService : ICustomerAuthService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private Customer? _currentCustomer;
 
         public event Action? OnAuthStateChanged;
 
-        public CustomerAuthService(ApplicationDbContext context)
+        public CustomerAuthService(IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public Customer? CurrentCustomer => _currentCustomer;
@@ -35,7 +35,8 @@ namespace CustomerShop.Services
 
         public async Task<Customer?> LoginAsync(string email, string password)
         {
-            var customer = await _context.Customers
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var customer = await context.Customers
                 .FirstOrDefaultAsync(c => c.Email == email && c.Password == password);
             
             if (customer != null)
@@ -49,8 +50,10 @@ namespace CustomerShop.Services
 
         public async Task<(bool Success, string Message)> RegisterAsync(string name, string email, string phone, string password, string? address)
         {
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            
             // Kiểm tra email đã tồn tại
-            var existingCustomer = await _context.Customers
+            var existingCustomer = await context.Customers
                 .FirstOrDefaultAsync(c => c.Email == email);
             
             if (existingCustomer != null)
@@ -61,7 +64,7 @@ namespace CustomerShop.Services
             // Kiểm tra số điện thoại đã tồn tại
             if (!string.IsNullOrEmpty(phone))
             {
-                var existingPhone = await _context.Customers
+                var existingPhone = await context.Customers
                     .FirstOrDefaultAsync(c => c.Phone == phone);
                 if (existingPhone != null)
                 {
@@ -79,8 +82,8 @@ namespace CustomerShop.Services
                 CreatedAt = DateTime.Now
             };
 
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
 
             // Tự động đăng nhập sau khi đăng ký
             _currentCustomer = customer;
@@ -91,7 +94,8 @@ namespace CustomerShop.Services
 
         public async Task<Customer?> GetCustomerByIdAsync(int customerId)
         {
-            return await _context.Customers
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Customers
                 .Include(c => c.Orders)
                     .ThenInclude(o => o.OrderItems)
                         .ThenInclude(oi => oi.Product)
@@ -102,8 +106,9 @@ namespace CustomerShop.Services
         {
             try
             {
-                _context.Customers.Update(customer);
-                await _context.SaveChangesAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                context.Customers.Update(customer);
+                await context.SaveChangesAsync();
                 
                 if (_currentCustomer?.CustomerId == customer.CustomerId)
                 {
@@ -131,12 +136,24 @@ namespace CustomerShop.Services
 
             try
             {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // Lấy customer từ database
+                var customer = await context.Customers.FindAsync(_currentCustomer.CustomerId);
+                if (customer == null) return false;
+                
+                customer.Name = name;
+                customer.Phone = phone;
+                customer.Address = address;
+
+                context.Customers.Update(customer);
+                await context.SaveChangesAsync();
+                
+                // Cập nhật local state
                 _currentCustomer.Name = name;
                 _currentCustomer.Phone = phone;
                 _currentCustomer.Address = address;
-
-                _context.Customers.Update(_currentCustomer);
-                await _context.SaveChangesAsync();
+                
                 NotifyAuthStateChanged();
                 return true;
             }
@@ -158,9 +175,16 @@ namespace CustomerShop.Services
                     return false;
                 }
 
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var customer = await context.Customers.FindAsync(_currentCustomer.CustomerId);
+                if (customer == null) return false;
+                
+                customer.Password = newPassword;
+                context.Customers.Update(customer);
+                await context.SaveChangesAsync();
+                
                 _currentCustomer.Password = newPassword;
-                _context.Customers.Update(_currentCustomer);
-                await _context.SaveChangesAsync();
                 return true;
             }
             catch

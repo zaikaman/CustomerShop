@@ -16,16 +16,17 @@ namespace CustomerShop.Services
 
     public class OrderService : IOrderService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public OrderService(ApplicationDbContext context)
+        public OrderService(IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task<Order> CreateOrderAsync(int customerId, Cart cart, int? promoId, string paymentMethod)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
@@ -35,14 +36,14 @@ namespace CustomerShop.Services
                 // Áp dụng khuyến mãi nếu có
                 if (promoId.HasValue)
                 {
-                    var promo = await _context.Promotions.FindAsync(promoId.Value);
+                    var promo = await context.Promotions.FindAsync(promoId.Value);
                     if (promo != null && promo.IsValid())
                     {
                         discountAmount = await CalculateDiscountAsync(promo, totalAmount);
                         
                         // Cập nhật số lần sử dụng
                         promo.UsedCount++;
-                        _context.Promotions.Update(promo);
+                        context.Promotions.Update(promo);
                     }
                 }
 
@@ -57,8 +58,8 @@ namespace CustomerShop.Services
                     DiscountAmount = discountAmount
                 };
 
-                _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
+                context.Orders.Add(order);
+                await context.SaveChangesAsync();
 
                 // Thêm chi tiết đơn hàng và cập nhật tồn kho
                 foreach (var item in cart.Items)
@@ -71,16 +72,16 @@ namespace CustomerShop.Services
                         Price = item.Price,
                         Subtotal = item.Subtotal
                     };
-                    _context.OrderItems.Add(orderItem);
+                    context.OrderItems.Add(orderItem);
 
                     // Cập nhật tồn kho
-                    var inventory = await _context.Inventories
+                    var inventory = await context.Inventories
                         .FirstOrDefaultAsync(i => i.ProductId == item.ProductId);
                     if (inventory != null)
                     {
                         inventory.Quantity -= item.Quantity;
                         inventory.UpdatedAt = DateTime.Now;
-                        _context.Inventories.Update(inventory);
+                        context.Inventories.Update(inventory);
                     }
                 }
 
@@ -90,15 +91,16 @@ namespace CustomerShop.Services
                     OrderId = order.OrderId,
                     Amount = totalAmount - discountAmount,
                     PaymentMethod = paymentMethod,
+                    PaymentStatus = "completed",
                     PaymentDate = DateTime.Now
                 };
-                _context.Payments.Add(payment);
+                context.Payments.Add(payment);
 
                 // Cập nhật trạng thái đơn hàng thành đã thanh toán
                 order.Status = "paid";
-                _context.Orders.Update(order);
+                context.Orders.Update(order);
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return order;
@@ -112,22 +114,26 @@ namespace CustomerShop.Services
 
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
-            return await _context.Orders
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.Promotion)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
 
         public async Task<List<Order>> GetCustomerOrdersAsync(int customerId)
         {
-            return await _context.Orders
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Orders
                 .Include(o => o.Promotion)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
+                .AsSplitQuery()
                 .Where(o => o.CustomerId == customerId)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
@@ -135,7 +141,8 @@ namespace CustomerShop.Services
 
         public async Task<Promotion?> ValidatePromoCodeAsync(string promoCode, decimal orderAmount)
         {
-            var promo = await _context.Promotions
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var promo = await context.Promotions
                 .FirstOrDefaultAsync(p => p.PromoCode == promoCode);
 
             if (promo == null)
@@ -176,33 +183,34 @@ namespace CustomerShop.Services
         {
             try
             {
-                var order = await _context.Orders.FindAsync(orderId);
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                var order = await context.Orders.FindAsync(orderId);
                 if (order == null || order.Status != "pending")
                 {
                     return false;
                 }
 
                 order.Status = "cancelled";
-                _context.Orders.Update(order);
+                context.Orders.Update(order);
 
                 // Hoàn lại tồn kho
-                var orderItems = await _context.OrderItems
+                var orderItems = await context.OrderItems
                     .Where(oi => oi.OrderId == orderId)
                     .ToListAsync();
 
                 foreach (var item in orderItems)
                 {
-                    var inventory = await _context.Inventories
+                    var inventory = await context.Inventories
                         .FirstOrDefaultAsync(i => i.ProductId == item.ProductId);
                     if (inventory != null)
                     {
                         inventory.Quantity += item.Quantity;
                         inventory.UpdatedAt = DateTime.Now;
-                        _context.Inventories.Update(inventory);
+                        context.Inventories.Update(inventory);
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return true;
             }
             catch

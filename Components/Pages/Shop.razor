@@ -4,13 +4,13 @@
 @inject ICartService CartService
 @inject NavigationManager Navigation
 
-<PageTitle>Shop - Stuffsus</PageTitle>
+<PageTitle>Cửa hàng - Stuffsus</PageTitle>
 
 <section class="shop-page">
     <!-- Hero Banner -->
     <div class="shop-hero">
         <div class="shop-hero-content">
-            <h1>Shop</h1>
+            <h1>Cửa hàng</h1>
             <p>Khám phá bộ sưu tập đa dạng của chúng tôi</p>
         </div>
     </div>
@@ -41,19 +41,19 @@
 
     <div class="shop-content">
         <div class="container">
-            <div class="shop-layout">
+            <div class="shop-content-layout">
                 <!-- Sidebar -->
                 <aside class="shop-sidebar">
                     <!-- Categories Filter -->
                     <div class="filter-section">
-                        <h3 class="filter-title">Category</h3>
+                        <h3 class="filter-title">Danh mục</h3>
                         <div class="filter-options">
                             <label class="filter-option @(selectedCategory == null ? "active" : "")">
                                 <input type="radio" name="category" 
                                        checked="@(selectedCategory == null)"
                                        @onchange="() => SelectCategory(null)" />
-                                <span class="option-icon">📦</span>
-                                <span class="option-text">All Product</span>
+                                <span class="option-icon"><i class="hgi-stroke hgi-package"></i></span>
+                                <span class="option-text">Tất cả sản phẩm</span>
                                 <span class="option-count">@totalProducts</span>
                             </label>
                             
@@ -65,7 +65,7 @@
                                         <input type="radio" name="category"
                                                checked="@(selectedCategory == cat.CategoryId)"
                                                @onchange="() => SelectCategory(cat.CategoryId)" />
-                                        <span class="option-icon">@GetCategoryIcon(cat.CategoryName)</span>
+                                        <span class="option-icon">@((MarkupString)GetCategoryIcon(cat.CategoryName))</span>
                                         <span class="option-text">@cat.CategoryName</span>
                                     </label>
                                 }
@@ -137,7 +137,7 @@
                                         <div class="product-meta">
                                             <div class="product-rating">
                                                 ★ 4.@((product.ProductId % 5) + 5) 
-                                                <span class="rating-count">(@((product.ProductId * 23) % 1000 + 100) Reviews)</span>
+                                                <span class="rating-count">(@((product.ProductId * 23) % 1000 + 100) đánh giá)</span>
                                             </div>
                                             <span class="product-price">@product.Price.ToString("N0")₫</span>
                                         </div>
@@ -170,7 +170,7 @@
                         {
                             <div class="pagination">
                                 <button class="page-btn" disabled="@(currentPage == 1)" @onclick="() => GoToPage(currentPage - 1)">
-                                    ← Previous
+                                    ← Trước
                                 </button>
                                 
                                 @for (int i = 1; i <= totalPages; i++)
@@ -183,7 +183,7 @@
                                 }
                                 
                                 <button class="page-btn" disabled="@(currentPage == totalPages)" @onclick="() => GoToPage(currentPage + 1)">
-                                    Next →
+                                    Sau →
                                 </button>
                             </div>
                         }
@@ -191,7 +191,7 @@
                     else
                     {
                         <div class="empty-state">
-                            <div class="empty-icon">🔍</div>
+                            <div class="empty-icon"><i class="hgi-stroke hgi-search-01"></i></div>
                             <h3>Không tìm thấy sản phẩm</h3>
                             <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
                             <button class="btn btn-primary" @onclick="ClearFilters">Xóa bộ lọc</button>
@@ -333,12 +333,12 @@
     {
         return categoryName?.ToLower() switch
         {
-            "đồ uống" => "🥤",
-            "bánh kẹo" => "🍪",
-            "gia vị" => "🧂",
-            "đồ gia dụng" => "🏠",
-            "mỹ phẩm" => "💄",
-            _ => "📦"
+            "đồ uống" => "<i class='hgi-stroke hgi-soft-drink-01'></i>",
+            "bánh kẹo" => "<i class='hgi-stroke hgi-cookies'></i>",
+            "gia vị" => "<i class='hgi-stroke hgi-salt-and-pepper'></i>",
+            "đồ gia dụng" => "<i class='hgi-stroke hgi-home-01'></i>",
+            "mỹ phẩm" => "<i class='hgi-stroke hgi-lipstick'></i>",
+            _ => "<i class='hgi-stroke hgi-package'></i>"
         };
     }
 }

@@ -1,0 +1,64 @@
+@rendermode InteractiveServer
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@if (AuthService.IsAuthenticated)
+{
+    <div class="user-menu">
+        <button class="user-btn" @onclick="ToggleUserMenu">
+            <div class="avatar">
+                @(AuthService.CurrentCustomer?.Name?.Substring(0, 1).ToUpper() ?? "U")
+            </div>
+        </button>
+        @if (showUserMenu)
+        {
+            <div class="user-dropdown">
+                <div class="dropdown-header">
+                    <span class="user-name">@AuthService.CurrentCustomer?.Name</span>
+                    <span class="user-email">@AuthService.CurrentCustomer?.Email</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="/orders" class="dropdown-item">Đơn hàng của tôi</a>
+                <a href="/profile" class="dropdown-item">Thông tin cá nhân</a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item logout" @onclick="HandleLogout">Đăng xuất</button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <a href="/login" class="login-btn">Đăng nhập</a>
+}
+
+@code {
+    private bool showUserMenu = false;
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthStateChanged += HandleAuthStateChanged;
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+    }
+
+    private void HandleLogout()
+    {
+        AuthService.Logout();
+        showUserMenu = false;
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= HandleAuthStateChanged;
+    }
+}

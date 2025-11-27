@@ -18,8 +18,8 @@ var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
 
 var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};";
 
-// Cấu hình DbContext với MySQL
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// Cấu hình DbContext với MySQL - dùng Pooled DbContextFactory cho Blazor Server
+builder.Services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Đăng ký Services
