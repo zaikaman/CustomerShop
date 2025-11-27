@@ -399,7 +399,8 @@ else
                 AuthService.CurrentCustomer.CustomerId,
                 cart,
                 appliedPromo?.PromoId,
-                paymentMethod
+                paymentMethod,
+                transferContent
             );
 
             // Đánh dấu đang chuyển hướng trước khi clear cart để tránh flash

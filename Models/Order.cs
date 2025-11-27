@@ -29,6 +29,10 @@ namespace CustomerShop.Models
         [Display(Name = "Giảm giá")]
         public decimal DiscountAmount { get; set; } = 0;
 
+        [Display(Name = "Nội dung chuyển khoản")]
+        [MaxLength(100)]
+        public string? TransferContent { get; set; }
+
         // Navigation properties
         public Customer? Customer { get; set; }
         public User? User { get; set; }

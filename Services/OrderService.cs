@@ -6,7 +6,7 @@ namespace CustomerShop.Services
 {
     public interface IOrderService
     {
-        Task<Order> CreateOrderAsync(int customerId, Cart cart, int? promoId, string paymentMethod);
+        Task<Order> CreateOrderAsync(int customerId, Cart cart, int? promoId, string paymentMethod, string? transferContent = null);
         Task<Order?> GetOrderByIdAsync(int orderId);
         Task<List<Order>> GetCustomerOrdersAsync(int customerId);
         Task<Promotion?> ValidatePromoCodeAsync(string promoCode, decimal orderAmount);
@@ -23,7 +23,7 @@ namespace CustomerShop.Services
             _contextFactory = contextFactory;
         }
 
-        public async Task<Order> CreateOrderAsync(int customerId, Cart cart, int? promoId, string paymentMethod)
+        public async Task<Order> CreateOrderAsync(int customerId, Cart cart, int? promoId, string paymentMethod, string? transferContent = null)
         {
             await using var context = await _contextFactory.CreateDbContextAsync();
             using var transaction = await context.Database.BeginTransactionAsync();
@@ -55,7 +55,8 @@ namespace CustomerShop.Services
                     OrderDate = DateTime.Now,
                     Status = "pending",
                     TotalAmount = totalAmount,
-                    DiscountAmount = discountAmount
+                    DiscountAmount = discountAmount,
+                    TransferContent = (paymentMethod == "bank_transfer" || paymentMethod == "e-wallet") ? transferContent : null
                 };
 
                 context.Orders.Add(order);
