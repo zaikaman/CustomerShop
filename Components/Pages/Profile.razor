@@ -1,0 +1,334 @@
+@page "/profile"
+@rendermode InteractiveServer
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Tài khoản - Stuffsus</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="not-authenticated">
+        <h2>Vui lòng đăng nhập</h2>
+        <p>Bạn cần đăng nhập để xem thông tin tài khoản</p>
+        <a href="/login?returnUrl=/profile" class="btn btn-primary btn-lg">Đăng nhập</a>
+    </div>
+}
+else
+{
+    <div class="profile-page">
+        <div class="container">
+            <h1 class="page-title">Tài khoản của tôi</h1>
+
+            <div class="profile-layout">
+                <!-- Sidebar -->
+                <aside class="profile-sidebar">
+                    <div class="profile-avatar">
+                        <div class="avatar-circle">
+                            @(AuthService.CurrentCustomer?.Name?.Substring(0, 1).ToUpper() ?? "K")
+                        </div>
+                        <h3 class="customer-name">@AuthService.CurrentCustomer?.Name</h3>
+                        <p class="customer-email">@AuthService.CurrentCustomer?.Email</p>
+                    </div>
+
+                    <nav class="profile-nav">
+                        <a href="/profile" class="nav-item active">
+                            <span class="icon">👤</span>
+                            Thông tin cá nhân
+                        </a>
+                        <a href="/orders" class="nav-item">
+                            <span class="icon">📦</span>
+                            Đơn hàng của tôi
+                        </a>
+                        <button class="nav-item logout-btn" @onclick="HandleLogout">
+                            <span class="icon">🚪</span>
+                            Đăng xuất
+                        </button>
+                    </nav>
+                </aside>
+
+                <!-- Main Content -->
+                <div class="profile-content">
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success">
+                            @successMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-error">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Thông tin cá nhân</h2>
+                            @if (!isEditing)
+                            {
+                                <button class="btn btn-secondary btn-sm" @onclick="StartEditing">
+                                    ✏️ Chỉnh sửa
+                                </button>
+                            }
+                        </div>
+
+                        @if (isEditing)
+                        {
+                            <EditForm Model="@editModel" OnValidSubmit="HandleUpdateProfile" class="profile-form">
+                                <DataAnnotationsValidator />
+
+                                <div class="form-group">
+                                    <label class="form-label">Họ và tên</label>
+                                    <InputText @bind-Value="editModel.Name" class="form-input" placeholder="Nhập họ và tên" />
+                                    <ValidationMessage For="@(() => editModel.Name)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <InputText @bind-Value="editModel.Email" class="form-input" placeholder="Nhập email" disabled />
+                                    <span class="form-hint">Email không thể thay đổi</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Số điện thoại</label>
+                                    <InputText @bind-Value="editModel.Phone" class="form-input" placeholder="Nhập số điện thoại" />
+                                    <ValidationMessage For="@(() => editModel.Phone)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Địa chỉ</label>
+                                    <InputTextArea @bind-Value="editModel.Address" class="form-input form-textarea" placeholder="Nhập địa chỉ giao hàng" rows="3" />
+                                    <ValidationMessage For="@(() => editModel.Address)" class="validation-message" />
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline" @onclick="CancelEditing">Hủy</button>
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @(isSaving ? "Đang lưu..." : "Lưu thay đổi")
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                        else
+                        {
+                            <div class="profile-info">
+                                <div class="info-item">
+                                    <span class="info-label">Họ và tên</span>
+                                    <span class="info-value">@AuthService.CurrentCustomer?.Name</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value">@AuthService.CurrentCustomer?.Email</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Số điện thoại</span>
+                                    <span class="info-value">@(AuthService.CurrentCustomer?.Phone ?? "Chưa cập nhật")</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Địa chỉ</span>
+                                    <span class="info-value">@(AuthService.CurrentCustomer?.Address ?? "Chưa cập nhật")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Change Password Card -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Đổi mật khẩu</h2>
+                        </div>
+
+                        @if (showChangePassword)
+                        {
+                            <EditForm Model="@passwordModel" OnValidSubmit="HandleChangePassword" class="profile-form">
+                                <DataAnnotationsValidator />
+
+                                <div class="form-group">
+                                    <label class="form-label">Mật khẩu hiện tại</label>
+                                    <InputText type="password" @bind-Value="passwordModel.CurrentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại" />
+                                    <ValidationMessage For="@(() => passwordModel.CurrentPassword)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Mật khẩu mới</label>
+                                    <InputText type="password" @bind-Value="passwordModel.NewPassword" class="form-input" placeholder="Nhập mật khẩu mới" />
+                                    <ValidationMessage For="@(() => passwordModel.NewPassword)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Xác nhận mật khẩu mới</label>
+                                    <InputText type="password" @bind-Value="passwordModel.ConfirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới" />
+                                    <ValidationMessage For="@(() => passwordModel.ConfirmPassword)" class="validation-message" />
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline" @onclick="@(() => showChangePassword = false)">Hủy</button>
+                                    <button type="submit" class="btn btn-primary" disabled="@isChangingPassword">
+                                        @(isChangingPassword ? "Đang lưu..." : "Đổi mật khẩu")
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                        else
+                        {
+                            <div class="change-password-cta">
+                                <p>Để bảo mật tài khoản, bạn nên đổi mật khẩu định kỳ.</p>
+                                <button class="btn btn-secondary" @onclick="@(() => showChangePassword = true)">
+                                    🔒 Đổi mật khẩu
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private bool showChangePassword = false;
+    private bool isChangingPassword = false;
+    private string? successMessage;
+    private string? errorMessage;
+
+    private ProfileEditModel editModel = new();
+    private PasswordChangeModel passwordModel = new();
+
+    protected override void OnInitialized()
+    {
+        if (AuthService.CurrentCustomer != null)
+        {
+            editModel = new ProfileEditModel
+            {
+                Name = AuthService.CurrentCustomer.Name ?? "",
+                Email = AuthService.CurrentCustomer.Email ?? "",
+                Phone = AuthService.CurrentCustomer.Phone ?? "",
+                Address = AuthService.CurrentCustomer.Address ?? ""
+            };
+        }
+    }
+
+    private void StartEditing()
+    {
+        isEditing = true;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void CancelEditing()
+    {
+        isEditing = false;
+        if (AuthService.CurrentCustomer != null)
+        {
+            editModel = new ProfileEditModel
+            {
+                Name = AuthService.CurrentCustomer.Name ?? "",
+                Email = AuthService.CurrentCustomer.Email ?? "",
+                Phone = AuthService.CurrentCustomer.Phone ?? "",
+                Address = AuthService.CurrentCustomer.Address ?? ""
+            };
+        }
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var success = await AuthService.UpdateProfileAsync(
+                editModel.Name,
+                editModel.Phone,
+                editModel.Address
+            );
+
+            if (success)
+            {
+                successMessage = "Cập nhật thông tin thành công!";
+                isEditing = false;
+            }
+            else
+            {
+                errorMessage = "Không thể cập nhật thông tin. Vui lòng thử lại.";
+            }
+        }
+        catch
+        {
+            errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleChangePassword()
+    {
+        if (passwordModel.NewPassword != passwordModel.ConfirmPassword)
+        {
+            errorMessage = "Mật khẩu xác nhận không khớp.";
+            return;
+        }
+
+        isChangingPassword = true;
+        errorMessage = null;
+        successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var success = await AuthService.ChangePasswordAsync(
+                passwordModel.CurrentPassword,
+                passwordModel.NewPassword
+            );
+
+            if (success)
+            {
+                successMessage = "Đổi mật khẩu thành công!";
+                showChangePassword = false;
+                passwordModel = new PasswordChangeModel();
+            }
+            else
+            {
+                errorMessage = "Mật khẩu hiện tại không đúng.";
+            }
+        }
+        catch
+        {
+            errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+        }
+        finally
+        {
+            isChangingPassword = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleLogout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/");
+    }
+
+    public class ProfileEditModel
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
+    }
+
+    public class PasswordChangeModel
+    {
+        public string CurrentPassword { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

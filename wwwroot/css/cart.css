@@ -1,0 +1,304 @@
+/* ========================================
+   CART PAGE STYLES
+   ======================================== */
+
+.cart-page {
+    padding: var(--space-2xl) 0 var(--space-3xl);
+    min-height: 60vh;
+    background-color: var(--color-cream);
+}
+
+.page-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--color-black);
+    margin-bottom: var(--space-2xl);
+}
+
+/* Empty Cart */
+.empty-cart {
+    text-align: center;
+    padding: var(--space-3xl);
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
+}
+
+.empty-icon {
+    font-size: 5rem;
+    margin-bottom: var(--space-lg);
+}
+
+.empty-cart h2 {
+    font-size: 1.5rem;
+    color: var(--color-black);
+    margin-bottom: var(--space-sm);
+}
+
+.empty-cart p {
+    color: var(--color-gray);
+    margin-bottom: var(--space-xl);
+}
+
+/* Cart Layout */
+.cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--space-2xl);
+    align-items: start;
+}
+
+/* Cart Items */
+.cart-items {
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.cart-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+    gap: var(--space-lg);
+    padding: var(--space-lg) var(--space-xl);
+    background-color: var(--color-pearl);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+    gap: var(--space-lg);
+    padding: var(--space-xl);
+    align-items: center;
+    border-bottom: 1px solid var(--color-silver);
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+/* Item Product */
+.item-product {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: center;
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    background-color: var(--color-pearl);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-placeholder-small {
+    width: 60%;
+    height: 60%;
+    color: var(--color-silver);
+}
+
+.product-placeholder-small svg {
+    width: 100%;
+    height: 100%;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-black);
+    margin-bottom: var(--space-xs);
+    line-height: 1.4;
+}
+
+.item-category {
+    font-size: 0.8125rem;
+    color: var(--color-gray);
+}
+
+/* Item Price */
+.item-price {
+    font-size: 0.9375rem;
+    color: var(--color-charcoal);
+}
+
+/* Quantity Controls */
+.quantity-controls {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-silver);
+    border-radius: var(--radius-md);
+}
+
+.quantity-controls .qty-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--color-charcoal);
+    background: transparent;
+    transition: background-color var(--transition-fast);
+}
+
+.quantity-controls .qty-btn:hover {
+    background-color: var(--color-pearl);
+}
+
+.qty-value {
+    width: 40px;
+    text-align: center;
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+/* Item Subtotal */
+.item-subtotal {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-black);
+}
+
+/* Remove Button */
+.remove-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray);
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
+}
+
+.remove-btn:hover {
+    color: var(--color-error);
+    background-color: #fef2f2;
+}
+
+/* Cart Actions */
+.cart-actions {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-lg) var(--space-xl);
+    border-top: 1px solid var(--color-silver);
+}
+
+/* Cart Summary */
+.cart-summary {
+    position: sticky;
+    top: 100px;
+}
+
+.summary-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+}
+
+.summary-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-black);
+    margin-bottom: var(--space-xl);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    font-size: 0.9375rem;
+    color: var(--color-charcoal);
+}
+
+.summary-row .free {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.summary-divider {
+    height: 1px;
+    background-color: var(--color-silver);
+    margin: var(--space-lg) 0;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    margin-bottom: var(--space-xl);
+}
+
+.summary-total span:first-child {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-black);
+}
+
+.total-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-black);
+}
+
+.checkout-btn {
+    width: 100%;
+    margin-bottom: var(--space-md);
+}
+
+.secure-note {
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--color-gray);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .cart-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .cart-summary {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .cart-header {
+        display: none;
+    }
+    
+    .cart-item {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+    
+    .item-product {
+        grid-column: 1 / -1;
+    }
+    
+    .item-price,
+    .item-quantity,
+    .item-subtotal {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .item-price::before { content: 'Đơn giá: '; color: var(--color-gray); }
+    .item-subtotal::before { content: 'Thành tiền: '; color: var(--color-gray); }
+}

@@ -1,0 +1,321 @@
+@page "/checkout"
+@rendermode InteractiveServer
+@inject ICartService CartService
+@inject ICustomerAuthService AuthService
+@inject IOrderService OrderService
+@inject NavigationManager Navigation
+
+<PageTitle>Thanh toán - Stuffsus</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="not-authenticated">
+        <h2>Vui lòng đăng nhập</h2>
+        <p>Bạn cần đăng nhập để tiếp tục thanh toán</p>
+        <a href="/login?returnUrl=/checkout" class="btn btn-primary btn-lg">Đăng nhập</a>
+    </div>
+}
+else if (cart.Items.Count == 0)
+{
+    <div class="empty-cart-checkout">
+        <h2>Giỏ hàng trống</h2>
+        <p>Bạn chưa có sản phẩm nào để thanh toán</p>
+        <a href="/shop" class="btn btn-primary btn-lg">Tiếp tục mua sắm</a>
+    </div>
+}
+else
+{
+    <div class="checkout-page">
+        <div class="container">
+            <h1 class="page-title">Thanh toán</h1>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-error">
+                    @errorMessage
+                </div>
+            }
+
+            <div class="checkout-layout">
+                <!-- Checkout Form -->
+                <div class="checkout-form">
+                    <!-- Customer Info -->
+                    <div class="checkout-section">
+                        <h2 class="section-title">
+                            <span class="step-number">1</span>
+                            Thông tin giao hàng
+                        </h2>
+                        <div class="customer-info">
+                            <div class="info-row">
+                                <span class="info-label">Họ tên:</span>
+                                <span class="info-value">@AuthService.CurrentCustomer?.Name</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Email:</span>
+                                <span class="info-value">@AuthService.CurrentCustomer?.Email</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Điện thoại:</span>
+                                <span class="info-value">@(AuthService.CurrentCustomer?.Phone ?? "Chưa cập nhật")</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Địa chỉ:</span>
+                                <span class="info-value">@(AuthService.CurrentCustomer?.Address ?? "Chưa cập nhật")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Promo Code -->
+                    <div class="checkout-section">
+                        <h2 class="section-title">
+                            <span class="step-number">2</span>
+                            Mã giảm giá
+                        </h2>
+                        <div class="promo-form">
+                            <input type="text" @bind="promoCode" placeholder="Nhập mã giảm giá" class="form-input" />
+                            <button class="btn btn-secondary" @onclick="ApplyPromoCode" disabled="@isApplyingPromo">
+                                @(isApplyingPromo ? "Đang kiểm tra..." : "Áp dụng")
+                            </button>
+                        </div>
+                        @if (appliedPromo != null)
+                        {
+                            <div class="promo-applied">
+                                <span class="promo-tag">✓ @appliedPromo.PromoCode</span>
+                                <span class="promo-desc">@appliedPromo.Description</span>
+                                <button class="remove-promo" @onclick="RemovePromo">×</button>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(promoError))
+                        {
+                            <p class="promo-error">@promoError</p>
+                        }
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="checkout-section">
+                        <h2 class="section-title">
+                            <span class="step-number">3</span>
+                            Phương thức thanh toán
+                        </h2>
+                        <div class="payment-options">
+                            <label class="payment-option @(paymentMethod == "cash" ? "selected" : "")">
+                                <input type="radio" name="payment" value="cash" @onchange="@(() => paymentMethod = "cash")" checked="@(paymentMethod == "cash")" />
+                                <div class="payment-content">
+                                    <span class="payment-icon">💵</span>
+                                    <div class="payment-info">
+                                        <span class="payment-name">Tiền mặt</span>
+                                        <span class="payment-desc">Thanh toán khi nhận hàng (COD)</span>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="payment-option @(paymentMethod == "card" ? "selected" : "")">
+                                <input type="radio" name="payment" value="card" @onchange="@(() => paymentMethod = "card")" checked="@(paymentMethod == "card")" />
+                                <div class="payment-content">
+                                    <span class="payment-icon">💳</span>
+                                    <div class="payment-info">
+                                        <span class="payment-name">Thẻ tín dụng/Ghi nợ</span>
+                                        <span class="payment-desc">Visa, Mastercard, JCB</span>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="payment-option @(paymentMethod == "bank_transfer" ? "selected" : "")">
+                                <input type="radio" name="payment" value="bank_transfer" @onchange="@(() => paymentMethod = "bank_transfer")" checked="@(paymentMethod == "bank_transfer")" />
+                                <div class="payment-content">
+                                    <span class="payment-icon">🏦</span>
+                                    <div class="payment-info">
+                                        <span class="payment-name">Chuyển khoản ngân hàng</span>
+                                        <span class="payment-desc">Chuyển khoản qua tài khoản ngân hàng</span>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="payment-option @(paymentMethod == "e-wallet" ? "selected" : "")">
+                                <input type="radio" name="payment" value="e-wallet" @onchange="@(() => paymentMethod = "e-wallet")" checked="@(paymentMethod == "e-wallet")" />
+                                <div class="payment-content">
+                                    <span class="payment-icon">📱</span>
+                                    <div class="payment-info">
+                                        <span class="payment-name">Ví điện tử</span>
+                                        <span class="payment-desc">MoMo, ZaloPay, VNPay</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <div class="summary-card">
+                        <h2 class="summary-title">Đơn hàng của bạn</h2>
+                        
+                        <div class="order-items">
+                            @foreach (var item in cart.Items)
+                            {
+                                <div class="order-item">
+                                    <div class="item-image-small">
+                                        <div class="placeholder-small">📦</div>
+                                    </div>
+                                    <div class="item-details">
+                                        <span class="item-name">@item.ProductName</span>
+                                        <span class="item-qty">x@item.Quantity</span>
+                                    </div>
+                                    <span class="item-total">@item.Subtotal.ToString("N0")₫</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-row">
+                            <span>Tạm tính</span>
+                            <span>@cart.TotalAmount.ToString("N0")₫</span>
+                        </div>
+                        
+                        @if (discountAmount > 0)
+                        {
+                            <div class="summary-row discount">
+                                <span>Giảm giá</span>
+                                <span>-@discountAmount.ToString("N0")₫</span>
+                            </div>
+                        }
+                        
+                        <div class="summary-row">
+                            <span>Phí vận chuyển</span>
+                            <span class="free">Miễn phí</span>
+                        </div>
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <div class="summary-total">
+                            <span>Tổng cộng</span>
+                            <span class="total-amount">@((cart.TotalAmount - discountAmount).ToString("N0"))₫</span>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg place-order-btn" @onclick="PlaceOrder" disabled="@isPlacingOrder">
+                            @if (isPlacingOrder)
+                            {
+                                <span class="spinner"></span>
+                                <span>Đang xử lý...</span>
+                            }
+                            else
+                            {
+                                <span>Đặt hàng</span>
+                            }
+                        </button>
+
+                        <p class="terms-note">
+                            Bằng việc đặt hàng, bạn đồng ý với <a href="#">Điều khoản sử dụng</a> và <a href="#">Chính sách bảo mật</a> của chúng tôi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Models.Cart cart = new Models.Cart();
+    private string paymentMethod = "cash";
+    private string promoCode = "";
+    private Models.Promotion? appliedPromo;
+    private decimal discountAmount = 0;
+    private string? promoError;
+    private string? errorMessage;
+    private bool isApplyingPromo = false;
+    private bool isPlacingOrder = false;
+
+    protected override void OnInitialized()
+    {
+        cart = CartService.GetCart();
+        CartService.OnChange += RefreshCart;
+    }
+
+    private void RefreshCart()
+    {
+        cart = CartService.GetCart();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ApplyPromoCode()
+    {
+        if (string.IsNullOrWhiteSpace(promoCode))
+        {
+            promoError = "Vui lòng nhập mã giảm giá";
+            return;
+        }
+
+        isApplyingPromo = true;
+        promoError = null;
+        StateHasChanged();
+
+        try
+        {
+            var promo = await OrderService.ValidatePromoCodeAsync(promoCode.Trim().ToUpper(), cart.TotalAmount);
+            
+            if (promo != null)
+            {
+                appliedPromo = promo;
+                discountAmount = await OrderService.CalculateDiscountAsync(promo, cart.TotalAmount);
+                promoCode = "";
+            }
+            else
+            {
+                promoError = "Mã giảm giá không hợp lệ hoặc không áp dụng được cho đơn hàng này";
+            }
+        }
+        catch
+        {
+            promoError = "Đã xảy ra lỗi khi kiểm tra mã giảm giá";
+        }
+        finally
+        {
+            isApplyingPromo = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RemovePromo()
+    {
+        appliedPromo = null;
+        discountAmount = 0;
+    }
+
+    private async Task PlaceOrder()
+    {
+        if (AuthService.CurrentCustomer == null)
+        {
+            Navigation.NavigateTo("/login?returnUrl=/checkout");
+            return;
+        }
+
+        isPlacingOrder = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var order = await OrderService.CreateOrderAsync(
+                AuthService.CurrentCustomer.CustomerId,
+                cart,
+                appliedPromo?.PromoId,
+                paymentMethod
+            );
+
+            CartService.ClearCart();
+            Navigation.NavigateTo($"/order-success/{order.OrderId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.";
+        }
+        finally
+        {
+            isPlacingOrder = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        CartService.OnChange -= RefreshCart;
+    }
+}

@@ -1,0 +1,222 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IProductService ProductService
+@inject ICartService CartService
+@inject NavigationManager Navigation
+
+<PageTitle>Stuffsus - Cửa hàng bán lẻ cao cấp</PageTitle>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-background">
+        <div class="hero-overlay"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-text">
+            <span class="hero-tag">Cửa hàng bán lẻ</span>
+            <h1 class="hero-title">Shop</h1>
+            <p class="hero-subtitle">Khám phá bộ sưu tập sản phẩm chất lượng cao với giá tốt nhất</p>
+            <a href="/shop" class="btn btn-primary btn-lg">Mua sắm ngay</a>
+        </div>
+    </div>
+</section>
+
+<!-- Search Bar Section -->
+<section class="search-section">
+    <div class="search-box">
+        <h2 class="search-title">Give All You Need</h2>
+        <div class="search-form">
+            <input type="text" placeholder="Search on Stuffsus" @bind="searchQuery" @onkeydown="HandleSearchKeyDown" />
+            <button class="btn btn-primary" @onclick="PerformSearch">Search</button>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="categories-section">
+    <div class="container">
+        <h2 class="section-title">Danh mục sản phẩm</h2>
+        <div class="categories-grid">
+            @if (categories != null)
+            {
+                @foreach (var category in categories)
+                {
+                    <a href="/shop?category=@category.CategoryId" class="category-card">
+                        <div class="category-icon">
+                            @GetCategoryIcon(category.CategoryName)
+                        </div>
+                        <span class="category-name">@category.CategoryName</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="products-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Sản phẩm nổi bật</h2>
+            <a href="/shop" class="view-all-link">Xem tất cả →</a>
+        </div>
+        
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Đang tải sản phẩm...</p>
+            </div>
+        }
+        else if (featuredProducts != null && featuredProducts.Any())
+        {
+            <div class="products-grid">
+                @foreach (var product in featuredProducts.Take(8))
+                {
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="product-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                            <span class="product-badge">@product.Category?.CategoryName</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">@product.ProductName</h3>
+                            <div class="product-meta">
+                                <div class="product-rating">
+                                    ★ 4.@((product.ProductId % 5) + 5) 
+                                    <span class="rating-count">(@((product.ProductId * 23) % 1000 + 100) Reviews)</span>
+                                </div>
+                                <span class="product-price">@product.Price.ToString("N0")₫</span>
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn btn-secondary btn-sm" @onclick="() => AddToCart(product)">
+                                    Thêm vào giỏ
+                                </button>
+                                <a href="/product/@product.ProductId" class="btn btn-primary btn-sm">
+                                    Mua ngay
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <p>Không có sản phẩm nào.</p>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Recommendations Section -->
+<section class="recommendations-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Explore our recommendations</h2>
+            <div class="nav-arrows">
+                <button class="nav-arrow">←</button>
+                <button class="nav-arrow">→</button>
+            </div>
+        </div>
+        
+        @if (recommendedProducts != null && recommendedProducts.Any())
+        {
+            <div class="recommendations-grid">
+                @foreach (var product in recommendedProducts.Take(4))
+                {
+                    <div class="recommendation-card">
+                        <div class="recommendation-image">
+                            <div class="product-placeholder large">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                            <span class="product-badge">@product.Category?.CategoryName</span>
+                        </div>
+                        <div class="recommendation-info">
+                            <h3 class="recommendation-name">@product.ProductName</h3>
+                            <div class="recommendation-rating">
+                                ★ 4.@((product.ProductId % 5) + 5) 
+                                <span>(@((product.ProductId * 17) % 500 + 100) Reviews)</span>
+                            </div>
+                            <span class="recommendation-price">@product.Price.ToString("N0")₫</span>
+                            <div class="recommendation-actions">
+                                <button class="btn btn-secondary btn-sm" @onclick="() => AddToCart(product)">
+                                    Thêm vào giỏ
+                                </button>
+                                <a href="/product/@product.ProductId" class="btn btn-primary btn-sm">
+                                    Mua ngay
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private List<Category>? categories;
+    private List<Product>? featuredProducts;
+    private List<Product>? recommendedProducts;
+    private bool isLoading = true;
+    private string searchQuery = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categories = await ProductService.GetAllCategoriesAsync();
+            featuredProducts = await ProductService.GetAllProductsAsync();
+            recommendedProducts = featuredProducts?.OrderBy(p => Guid.NewGuid()).Take(4).ToList();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void AddToCart(Product product)
+    {
+        CartService.AddToCart(product);
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            PerformSearch();
+        }
+    }
+
+    private void PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            Navigation.NavigateTo($"/shop?search={Uri.EscapeDataString(searchQuery)}");
+        }
+    }
+
+    private string GetCategoryIcon(string categoryName)
+    {
+        return categoryName?.ToLower() switch
+        {
+            "đồ uống" => "🥤",
+            "bánh kẹo" => "🍪",
+            "gia vị" => "🧂",
+            "đồ gia dụng" => "🏠",
+            "mỹ phẩm" => "💄",
+            _ => "📦"
+        };
+    }
+}

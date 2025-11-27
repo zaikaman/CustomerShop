@@ -1,0 +1,215 @@
+﻿@inherits LayoutComponentBase
+@inject ICartService CartService
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="shop-layout">
+    <!-- Header -->
+    <header class="shop-header">
+        <div class="header-container">
+            <!-- Logo -->
+            <a href="/" class="logo">
+                <span class="logo-icon">◆</span>
+                <span class="logo-text">Stuffsus</span>
+            </a>
+
+            <!-- Navigation -->
+            <nav class="main-nav">
+                <a href="/" class="nav-link @(IsActive("/") ? "active" : "")">Beranda</a>
+                <a href="/shop" class="nav-link @(IsActive("/shop") ? "active" : "")">Shop</a>
+                <a href="/orders" class="nav-link @(IsActive("/orders") ? "active" : "")">Đơn hàng</a>
+            </nav>
+
+            <!-- Right Actions -->
+            <div class="header-actions">
+                <button class="action-btn search-btn" @onclick="ToggleSearch">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                </button>
+                
+                <a href="/cart" class="action-btn cart-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="8" cy="21" r="1"></circle>
+                        <circle cx="19" cy="21" r="1"></circle>
+                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                    </svg>
+                    @if (cartItemCount > 0)
+                    {
+                        <span class="cart-badge">@cartItemCount</span>
+                    }
+                </a>
+
+                @if (AuthService.IsAuthenticated)
+                {
+                    <div class="user-menu">
+                        <button class="user-btn" @onclick="ToggleUserMenu">
+                            <div class="avatar">
+                                @(AuthService.CurrentCustomer?.Name?.Substring(0, 1).ToUpper() ?? "U")
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="user-dropdown">
+                                <div class="dropdown-header">
+                                    <span class="user-name">@AuthService.CurrentCustomer?.Name</span>
+                                    <span class="user-email">@AuthService.CurrentCustomer?.Email</span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <a href="/orders" class="dropdown-item">Đơn hàng của tôi</a>
+                                <a href="/profile" class="dropdown-item">Thông tin cá nhân</a>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item logout" @onclick="HandleLogout">Đăng xuất</button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <a href="/login" class="login-btn">Đăng nhập</a>
+                }
+            </div>
+        </div>
+
+        <!-- Search Overlay -->
+        @if (showSearch)
+        {
+            <div class="search-overlay" @onclick="ToggleSearch">
+                <div class="search-container" @onclick:stopPropagation>
+                    <input type="text" placeholder="Tìm kiếm sản phẩm..." 
+                           @bind="searchQuery" 
+                           @bind:event="oninput"
+                           @onkeydown="HandleSearchKeyDown"
+                           class="search-input" />
+                    <button class="search-submit" @onclick="PerformSearch">
+                        Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        }
+    </header>
+
+    <!-- Main Content -->
+    <main class="shop-main">
+        @Body
+    </main>
+
+    <!-- Footer -->
+    <footer class="shop-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>About</h4>
+                    <ul>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Meet The Team</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Shipping</a></li>
+                        <li><a href="#">Return</a></li>
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section newsletter">
+                    <h3>Ready to Get<br/>Our New Stuff?</h3>
+                    <p>Stuffsus for Homes and Needs</p>
+                    <div class="newsletter-form">
+                        <input type="email" placeholder="Your Email" />
+                        <button>Send</button>
+                    </div>
+                </div>
+                <div class="footer-section social">
+                    <h4>Social Media</h4>
+                    <div class="social-links">
+                        <a href="#" class="social-link">𝕏</a>
+                        <a href="#" class="social-link">f</a>
+                        <a href="#" class="social-link">in</a>
+                        <a href="#" class="social-link">📷</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Stuffsus. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Đã xảy ra lỗi không mong muốn.
+    <a href="." class="reload">Tải lại</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private int cartItemCount = 0;
+    private bool showSearch = false;
+    private bool showUserMenu = false;
+    private string searchQuery = "";
+
+    protected override void OnInitialized()
+    {
+        cartItemCount = CartService.GetCartItemCount();
+        CartService.OnChange += UpdateCartCount;
+        AuthService.OnAuthStateChanged += StateHasChanged;
+    }
+
+    private void UpdateCartCount()
+    {
+        cartItemCount = CartService.GetCartItemCount();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsActive(string path)
+    {
+        return Navigation.Uri.EndsWith(path) || 
+               (path == "/" && Navigation.Uri.EndsWith(Navigation.BaseUri.TrimEnd('/')));
+    }
+
+    private void ToggleSearch()
+    {
+        showSearch = !showSearch;
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            PerformSearch();
+        }
+    }
+
+    private void PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            Navigation.NavigateTo($"/shop?search={Uri.EscapeDataString(searchQuery)}");
+            showSearch = false;
+            searchQuery = "";
+        }
+    }
+
+    private void HandleLogout()
+    {
+        AuthService.Logout();
+        showUserMenu = false;
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        CartService.OnChange -= UpdateCartCount;
+        AuthService.OnAuthStateChanged -= StateHasChanged;
+    }
+}

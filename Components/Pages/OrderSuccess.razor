@@ -1,0 +1,139 @@
+@page "/order-success/{OrderId:int}"
+@rendermode InteractiveServer
+@inject IOrderService OrderService
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Đặt hàng thành công - Stuffsus</PageTitle>
+
+@if (order == null)
+{
+    <div class="loading-container">
+        <div class="spinner-large"></div>
+        <p>Đang tải thông tin đơn hàng...</p>
+    </div>
+}
+else
+{
+    <div class="order-success-page">
+        <div class="container">
+            <div class="success-card">
+                <div class="success-icon">
+                    <span>✓</span>
+                </div>
+                <h1 class="success-title">Đặt hàng thành công!</h1>
+                <p class="success-message">
+                    Cảm ơn bạn đã mua hàng tại Stuffsus. Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.
+                </p>
+                
+                <div class="order-number">
+                    <span class="label">Mã đơn hàng:</span>
+                    <span class="value">#@order.OrderId.ToString("D6")</span>
+                </div>
+
+                <div class="order-info-grid">
+                    <div class="info-card">
+                        <span class="info-icon">📅</span>
+                        <span class="info-label">Ngày đặt</span>
+                        <span class="info-value">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-icon">📦</span>
+                        <span class="info-label">Trạng thái</span>
+                        <span class="info-value status-pending">@GetStatusText(order.Status)</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-icon">💰</span>
+                        <span class="info-label">Tổng tiền</span>
+                        <span class="info-value">@order.TotalAmount.ToString("N0")₫</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-icon">💳</span>
+                        <span class="info-label">Thanh toán</span>
+                        <span class="info-value">@GetPaymentMethod(order.Payments.FirstOrDefault()?.PaymentMethod)</span>
+                    </div>
+                </div>
+
+                @if (order.OrderItems != null && order.OrderItems.Count > 0)
+                {
+                    <div class="order-items-section">
+                        <h3>Chi tiết đơn hàng</h3>
+                        <div class="order-items-list">
+                            @foreach (var item in order.OrderItems)
+                            {
+                                <div class="order-item-row">
+                                    <div class="item-image-mini">📦</div>
+                                    <div class="item-info">
+                                        <span class="item-name">@item.Product?.ProductName</span>
+                                        <span class="item-qty">Số lượng: @item.Quantity</span>
+                                    </div>
+                                    <span class="item-price">@item.Subtotal.ToString("N0")₫</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="action-buttons">
+                    <a href="/orders" class="btn btn-secondary">Xem đơn hàng của tôi</a>
+                    <a href="/shop" class="btn btn-primary">Tiếp tục mua sắm</a>
+                </div>
+
+                <div class="email-notice">
+                    <span class="icon">📧</span>
+                    <p>Chúng tôi đã gửi email xác nhận đến <strong>@AuthService.CurrentCustomer?.Email</strong>. 
+                    Vui lòng kiểm tra hộp thư của bạn.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    private Order? order;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        order = await OrderService.GetOrderByIdAsync(OrderId);
+        
+        // Verify order belongs to current customer
+        if (order != null && order.CustomerId != AuthService.CurrentCustomer?.CustomerId)
+        {
+            Navigation.NavigateTo("/orders");
+        }
+    }
+
+    private string GetStatusText(string? status)
+    {
+        return status switch
+        {
+            "pending" => "Chờ xử lý",
+            "processing" => "Đang xử lý",
+            "shipped" => "Đang giao",
+            "delivered" => "Đã giao",
+            "cancelled" => "Đã hủy",
+            _ => "Chờ xử lý"
+        };
+    }
+
+    private string GetPaymentMethod(string? method)
+    {
+        return method switch
+        {
+            "cash" => "Tiền mặt (COD)",
+            "card" => "Thẻ tín dụng",
+            "bank_transfer" => "Chuyển khoản",
+            "e-wallet" => "Ví điện tử",
+            _ => "Tiền mặt"
+        };
+    }
+}

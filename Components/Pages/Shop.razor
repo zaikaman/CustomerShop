@@ -1,0 +1,344 @@
+@page "/shop"
+@rendermode InteractiveServer
+@inject IProductService ProductService
+@inject ICartService CartService
+@inject NavigationManager Navigation
+
+<PageTitle>Shop - Stuffsus</PageTitle>
+
+<section class="shop-page">
+    <!-- Hero Banner -->
+    <div class="shop-hero">
+        <div class="shop-hero-content">
+            <h1>Shop</h1>
+            <p>Khám phá bộ sưu tập đa dạng của chúng tôi</p>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="shop-toolbar">
+        <div class="container">
+            <div class="toolbar-content">
+                <div class="search-bar">
+                    <input type="text" placeholder="Tìm kiếm sản phẩm..." 
+                           @bind="searchTerm" 
+                           @bind:event="oninput"
+                           @onkeydown="HandleSearchKeyDown" />
+                    <button class="search-btn" @onclick="ApplyFilters">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="filter-group">
+                    <span class="filter-label">Hiển thị @totalProducts sản phẩm</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="shop-content">
+        <div class="container">
+            <div class="shop-layout">
+                <!-- Sidebar -->
+                <aside class="shop-sidebar">
+                    <!-- Categories Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Category</h3>
+                        <div class="filter-options">
+                            <label class="filter-option @(selectedCategory == null ? "active" : "")">
+                                <input type="radio" name="category" 
+                                       checked="@(selectedCategory == null)"
+                                       @onchange="() => SelectCategory(null)" />
+                                <span class="option-icon">📦</span>
+                                <span class="option-text">All Product</span>
+                                <span class="option-count">@totalProducts</span>
+                            </label>
+                            
+                            @if (categories != null)
+                            {
+                                @foreach (var cat in categories)
+                                {
+                                    <label class="filter-option @(selectedCategory == cat.CategoryId ? "active" : "")">
+                                        <input type="radio" name="category"
+                                               checked="@(selectedCategory == cat.CategoryId)"
+                                               @onchange="() => SelectCategory(cat.CategoryId)" />
+                                        <span class="option-icon">@GetCategoryIcon(cat.CategoryName)</span>
+                                        <span class="option-text">@cat.CategoryName</span>
+                                    </label>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Sort Options -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Sắp xếp</h3>
+                        <div class="filter-options">
+                            <label class="filter-option @(sortBy == "newest" ? "active" : "")">
+                                <input type="radio" name="sort"
+                                       checked="@(sortBy == "newest")"
+                                       @onchange="@(() => SelectSort(@"newest"))" />
+                                <span class="option-text">Mới nhất</span>
+                            </label>
+                            <label class="filter-option @(sortBy == "price_asc" ? "active" : "")">
+                                <input type="radio" name="sort"
+                                       checked="@(sortBy == "price_asc")"
+                                       @onchange="@(() => SelectSort(@"price_asc"))" />
+                                <span class="option-text">Giá thấp → cao</span>
+                            </label>
+                            <label class="filter-option @(sortBy == "price_desc" ? "active" : "")">
+                                <input type="radio" name="sort"
+                                       checked="@(sortBy == "price_desc")"
+                                       @onchange="@(() => SelectSort(@"price_desc"))" />
+                                <span class="option-text">Giá cao → thấp</span>
+                            </label>
+                            <label class="filter-option @(sortBy == "name_asc" ? "active" : "")">
+                                <input type="radio" name="sort"
+                                       checked="@(sortBy == "name_asc")"
+                                       @onchange="@(() => SelectSort(@"name_asc"))" />
+                                <span class="option-text">Tên A → Z</span>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Products Grid -->
+                <main class="shop-main">
+                    @if (isLoading)
+                    {
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p>Đang tải sản phẩm...</p>
+                        </div>
+                    }
+                    else if (products != null && products.Any())
+                    {
+                        <div class="products-grid">
+                            @foreach (var product in products)
+                            {
+                                <div class="product-card">
+                                    <a href="/product/@product.ProductId" class="product-image">
+                                        <div class="product-placeholder">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                <polyline points="21 15 16 10 5 21"></polyline>
+                                            </svg>
+                                        </div>
+                                        <span class="product-badge">@product.Category?.CategoryName</span>
+                                    </a>
+                                    <div class="product-info">
+                                        <a href="/product/@product.ProductId">
+                                            <h3 class="product-name">@product.ProductName</h3>
+                                        </a>
+                                        <div class="product-meta">
+                                            <div class="product-rating">
+                                                ★ 4.@((product.ProductId % 5) + 5) 
+                                                <span class="rating-count">(@((product.ProductId * 23) % 1000 + 100) Reviews)</span>
+                                            </div>
+                                            <span class="product-price">@product.Price.ToString("N0")₫</span>
+                                        </div>
+                                        <div class="product-stock">
+                                            @if (product.Inventory?.Quantity > 0)
+                                            {
+                                                <span class="in-stock">Còn @product.Inventory.Quantity @product.Unit</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="out-of-stock">Hết hàng</span>
+                                            }
+                                        </div>
+                                        <div class="product-actions">
+                                            <button class="btn btn-secondary btn-sm" @onclick="() => AddToCart(product)"
+                                                    disabled="@(product.Inventory?.Quantity <= 0)">
+                                                Thêm vào giỏ
+                                            </button>
+                                            <a href="/product/@product.ProductId" class="btn btn-primary btn-sm">
+                                                Mua ngay
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Pagination -->
+                        @if (totalPages > 1)
+                        {
+                            <div class="pagination">
+                                <button class="page-btn" disabled="@(currentPage == 1)" @onclick="() => GoToPage(currentPage - 1)">
+                                    ← Previous
+                                </button>
+                                
+                                @for (int i = 1; i <= totalPages; i++)
+                                {
+                                    var pageNum = i;
+                                    <button class="page-btn @(currentPage == pageNum ? "active" : "")" 
+                                            @onclick="() => GoToPage(pageNum)">
+                                        @pageNum
+                                    </button>
+                                }
+                                
+                                <button class="page-btn" disabled="@(currentPage == totalPages)" @onclick="() => GoToPage(currentPage + 1)">
+                                    Next →
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <h3>Không tìm thấy sản phẩm</h3>
+                            <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                            <button class="btn btn-primary" @onclick="ClearFilters">Xóa bộ lọc</button>
+                        </div>
+                    }
+                </main>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<Category>? categories;
+    private List<Product>? products;
+    private bool isLoading = true;
+    
+    // Filter states
+    private int? selectedCategory;
+    private string searchTerm = "";
+    private string sortBy = "newest";
+    private int currentPage = 1;
+    private int pageSize = 12;
+    private int totalProducts = 0;
+    private int totalPages = 0;
+
+    [SupplyParameterFromQuery]
+    public int? Category { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Search { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load từ query parameters
+        selectedCategory = Category;
+        searchTerm = Search ?? "";
+        
+        categories = await ProductService.GetAllCategoriesAsync();
+        await LoadProducts();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Category != selectedCategory || Search != searchTerm)
+        {
+            selectedCategory = Category;
+            searchTerm = Search ?? "";
+            currentPage = 1;
+            await LoadProducts();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            products = await ProductService.GetProductsWithFiltersAsync(
+                selectedCategory, searchTerm, sortBy, currentPage, pageSize);
+            totalProducts = await ProductService.GetTotalProductsCountAsync(selectedCategory, searchTerm);
+            totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SelectCategory(int? categoryId)
+    {
+        selectedCategory = categoryId;
+        currentPage = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private async Task SelectSort(string sort)
+    {
+        sortBy = sort;
+        currentPage = 1;
+        await LoadProducts();
+    }
+
+    private async Task ApplyFilters()
+    {
+        currentPage = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _ = ApplyFilters();
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        currentPage = page;
+        await LoadProducts();
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedCategory = null;
+        searchTerm = "";
+        sortBy = "newest";
+        currentPage = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private void UpdateUrl()
+    {
+        var queryParams = new List<string>();
+        if (selectedCategory.HasValue)
+            queryParams.Add($"category={selectedCategory}");
+        if (!string.IsNullOrEmpty(searchTerm))
+            queryParams.Add($"search={Uri.EscapeDataString(searchTerm)}");
+        
+        var url = "/shop" + (queryParams.Any() ? "?" + string.Join("&", queryParams) : "");
+        Navigation.NavigateTo(url, forceLoad: false);
+    }
+
+    private void AddToCart(Product product)
+    {
+        if (product.Inventory?.Quantity > 0)
+        {
+            CartService.AddToCart(product);
+        }
+    }
+
+    private string GetCategoryIcon(string categoryName)
+    {
+        return categoryName?.ToLower() switch
+        {
+            "đồ uống" => "🥤",
+            "bánh kẹo" => "🍪",
+            "gia vị" => "🧂",
+            "đồ gia dụng" => "🏠",
+            "mỹ phẩm" => "💄",
+            _ => "📦"
+        };
+    }
+}

@@ -1,0 +1,290 @@
+@page "/orders"
+@rendermode InteractiveServer
+@inject IOrderService OrderService
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Đơn hàng của tôi - Stuffsus</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="not-authenticated">
+        <h2>Vui lòng đăng nhập</h2>
+        <p>Bạn cần đăng nhập để xem đơn hàng của mình</p>
+        <a href="/login?returnUrl=/orders" class="btn btn-primary btn-lg">Đăng nhập</a>
+    </div>
+}
+else
+{
+    <div class="orders-page">
+        <div class="container">
+            <h1 class="page-title">Đơn hàng của tôi</h1>
+
+            @if (isLoading)
+            {
+                <div class="loading-container">
+                    <div class="spinner-large"></div>
+                    <p>Đang tải đơn hàng...</p>
+                </div>
+            }
+            else if (orders == null || orders.Count == 0)
+            {
+                <div class="empty-orders">
+                    <div class="empty-icon">📦</div>
+                    <h2>Chưa có đơn hàng nào</h2>
+                    <p>Bạn chưa đặt đơn hàng nào. Hãy khám phá các sản phẩm của chúng tôi!</p>
+                    <a href="/shop" class="btn btn-primary btn-lg">Bắt đầu mua sắm</a>
+                </div>
+            }
+            else
+            {
+                <div class="orders-list">
+                    @foreach (var order in orders)
+                    {
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <span class="order-id">Đơn hàng #@order.OrderId.ToString("D6")</span>
+                                    <span class="order-date">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                                <div class="order-status @GetStatusClass(order.Status)">
+                                    @GetStatusText(order.Status)
+                                </div>
+                            </div>
+
+                            <div class="order-items-preview">
+                                @if (order.OrderItems != null)
+                                {
+                                    @foreach (var item in order.OrderItems.Take(3))
+                                    {
+                                        <div class="item-preview">
+                                            <div class="item-image-tiny">📦</div>
+                                            <div class="item-detail">
+                                                <span class="item-name">@item.Product?.ProductName</span>
+                                                <span class="item-qty">x@item.Quantity</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (order.OrderItems.Count > 3)
+                                    {
+                                        <div class="more-items">
+                                            +@(order.OrderItems.Count - 3) sản phẩm khác
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <div class="order-footer">
+                                <div class="order-total">
+                                    <span class="label">Tổng tiền:</span>
+                                    <span class="amount">@order.TotalAmount.ToString("N0")₫</span>
+                                </div>
+                                <div class="order-actions">
+                                    <button class="btn btn-outline btn-sm" @onclick="@(() => ToggleOrderDetails(order.OrderId))">
+                                        @(expandedOrderId == order.OrderId ? "Ẩn chi tiết" : "Xem chi tiết")
+                                    </button>
+                                    @if (order.Status == "pending")
+                                    {
+                                        <button class="btn btn-danger btn-sm" @onclick="@(() => CancelOrder(order.OrderId))">
+                                            Hủy đơn
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (expandedOrderId == order.OrderId)
+                            {
+                                <div class="order-details-expanded">
+                                    <div class="details-section">
+                                        <h4>Chi tiết sản phẩm</h4>
+                                        @if (order.OrderItems != null)
+                                        {
+                                            @foreach (var item in order.OrderItems)
+                                            {
+                                                <div class="detail-item">
+                                                    <div class="item-image-small">📦</div>
+                                                    <div class="item-info">
+                                                        <span class="name">@item.Product?.ProductName</span>
+                                                        <span class="price">@item.Price.ToString("N0")₫ x @item.Quantity</span>
+                                                    </div>
+                                                    <span class="subtotal">@item.Subtotal.ToString("N0")₫</span>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+
+                                    <div class="details-section">
+                                        <h4>Thông tin thanh toán</h4>
+                                        @if (order.Payments != null && order.Payments.Count > 0)
+                                        {
+                                            var payment = order.Payments.First();
+                                            <div class="payment-info">
+                                                <div class="info-row">
+                                                    <span>Phương thức:</span>
+                                                    <span>@GetPaymentMethod(payment.PaymentMethod)</span>
+                                                </div>
+                                                <div class="info-row">
+                                                    <span>Trạng thái:</span>
+                                                    <span class="@GetPaymentStatusClass(payment.PaymentStatus)">
+                                                        @GetPaymentStatusText(payment.PaymentStatus)
+                                                    </span>
+                                                </div>
+                                                <div class="info-row">
+                                                    <span>Số tiền:</span>
+                                                    <span class="amount">@payment.Amount.ToString("N0")₫</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="details-summary">
+                                        <div class="summary-row">
+                                            <span>Tạm tính:</span>
+                                            <span>@order.OrderItems?.Sum(i => i.Subtotal).ToString("N0")₫</span>
+                                        </div>
+                                        @if (order.DiscountAmount > 0)
+                                        {
+                                            <div class="summary-row discount">
+                                                <span>Giảm giá:</span>
+                                                <span>-@order.DiscountAmount.ToString("N0")₫</span>
+                                            </div>
+                                        }
+                                        <div class="summary-row total">
+                                            <span>Tổng cộng:</span>
+                                            <span>@order.TotalAmount.ToString("N0")₫</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Order>? orders;
+    private bool isLoading = true;
+    private int? expandedOrderId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            return;
+        }
+
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (AuthService.CurrentCustomer != null)
+            {
+                orders = await OrderService.GetCustomerOrdersAsync(AuthService.CurrentCustomer.CustomerId);
+            }
+        }
+        catch
+        {
+            orders = new List<Order>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleOrderDetails(int orderId)
+    {
+        if (expandedOrderId == orderId)
+        {
+            expandedOrderId = null;
+        }
+        else
+        {
+            expandedOrderId = orderId;
+        }
+    }
+
+    private async Task CancelOrder(int orderId)
+    {
+        try
+        {
+            await OrderService.CancelOrderAsync(orderId);
+            await LoadOrders();
+        }
+        catch
+        {
+            // Show error notification
+        }
+    }
+
+    private string GetStatusText(string? status)
+    {
+        return status switch
+        {
+            "pending" => "Chờ xử lý",
+            "processing" => "Đang xử lý",
+            "shipped" => "Đang giao",
+            "delivered" => "Đã giao",
+            "cancelled" => "Đã hủy",
+            _ => "Chờ xử lý"
+        };
+    }
+
+    private string GetStatusClass(string? status)
+    {
+        return status switch
+        {
+            "pending" => "status-pending",
+            "processing" => "status-processing",
+            "shipped" => "status-shipped",
+            "delivered" => "status-delivered",
+            "cancelled" => "status-cancelled",
+            _ => "status-pending"
+        };
+    }
+
+    private string GetPaymentMethod(string? method)
+    {
+        return method switch
+        {
+            "cash" => "Tiền mặt (COD)",
+            "card" => "Thẻ tín dụng",
+            "bank_transfer" => "Chuyển khoản",
+            "e-wallet" => "Ví điện tử",
+            _ => "Tiền mặt"
+        };
+    }
+
+    private string GetPaymentStatusText(string? status)
+    {
+        return status switch
+        {
+            "pending" => "Chờ thanh toán",
+            "completed" => "Đã thanh toán",
+            "failed" => "Thất bại",
+            "refunded" => "Đã hoàn tiền",
+            _ => "Chờ thanh toán"
+        };
+    }
+
+    private string GetPaymentStatusClass(string? status)
+    {
+        return status switch
+        {
+            "completed" => "text-success",
+            "failed" => "text-danger",
+            "refunded" => "text-warning",
+            _ => "text-muted"
+        };
+    }
+}

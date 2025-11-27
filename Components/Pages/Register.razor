@@ -1,0 +1,184 @@
+@page "/register"
+@rendermode InteractiveServer
+@inject ICustomerAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Đăng ký - Stuffsus</PageTitle>
+
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <a href="/" class="auth-logo">◆ Stuffsus</a>
+                <h1>Đăng ký tài khoản</h1>
+                <p>Tạo tài khoản để bắt đầu mua sắm</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-error">
+                    @errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success">
+                    @successMessage
+                </div>
+            }
+
+            <EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+                <DataAnnotationsValidator />
+                
+                <div class="form-group">
+                    <label class="form-label" for="name">Họ và tên</label>
+                    <InputText id="name" @bind-Value="registerModel.Name" class="form-input" placeholder="Nhập họ và tên" />
+                    <ValidationMessage For="@(() => registerModel.Name)" class="validation-error" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <InputText id="email" @bind-Value="registerModel.Email" class="form-input" placeholder="Nhập email của bạn" />
+                    <ValidationMessage For="@(() => registerModel.Email)" class="validation-error" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="phone">Số điện thoại</label>
+                    <InputText id="phone" @bind-Value="registerModel.Phone" class="form-input" placeholder="Nhập số điện thoại" />
+                    <ValidationMessage For="@(() => registerModel.Phone)" class="validation-error" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Mật khẩu</label>
+                    <InputText id="password" @bind-Value="registerModel.Password" type="password" class="form-input" placeholder="Tạo mật khẩu" />
+                    <ValidationMessage For="@(() => registerModel.Password)" class="validation-error" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Xác nhận mật khẩu</label>
+                    <InputText id="confirmPassword" @bind-Value="registerModel.ConfirmPassword" type="password" class="form-input" placeholder="Nhập lại mật khẩu" />
+                    <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="validation-error" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="address">Địa chỉ (không bắt buộc)</label>
+                    <InputTextArea id="address" @bind-Value="registerModel.Address" class="form-input" placeholder="Nhập địa chỉ giao hàng" rows="2" />
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg auth-submit" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner"></span>
+                        <span>Đang đăng ký...</span>
+                    }
+                    else
+                    {
+                        <span>Đăng ký</span>
+                    }
+                </button>
+            </EditForm>
+
+            <div class="auth-footer">
+                <p>Đã có tài khoản? <a href="/login@(returnUrl != null ? $"?returnUrl={returnUrl}" : "")">Đăng nhập</a></p>
+            </div>
+        </div>
+
+        <div class="auth-decoration">
+            <div class="decoration-content">
+                <h2>Ưu đãi dành riêng</h2>
+                <p>Đăng ký ngay để nhận mã giảm giá 20% cho đơn hàng đầu tiên và cập nhật các chương trình khuyến mãi mới nhất.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? returnUrl;
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        returnUrl = ReturnUrl;
+        
+        if (AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo(returnUrl ?? "/");
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            errorMessage = "Mật khẩu xác nhận không khớp.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var (success, message) = await AuthService.RegisterAsync(
+                registerModel.Name,
+                registerModel.Email,
+                registerModel.Phone,
+                registerModel.Password,
+                registerModel.Address
+            );
+            
+            if (success)
+            {
+                successMessage = message;
+                await Task.Delay(1500);
+                Navigation.NavigateTo(returnUrl ?? "/", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch
+        {
+            errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập họ và tên")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 2, ErrorMessage = "Họ tên phải có từ 2 đến 100 ký tự")]
+        public string Name { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập email")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập số điện thoại")]
+        [System.ComponentModel.DataAnnotations.Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        public string Phone { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
+        public string Password { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng xác nhận mật khẩu")]
+        public string ConfirmPassword { get; set; } = "";
+
+        public string? Address { get; set; }
+    }
+}
