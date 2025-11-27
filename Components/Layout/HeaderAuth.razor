@@ -54,7 +54,7 @@ else
     {
         AuthService.Logout();
         showUserMenu = false;
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/", forceLoad: false);
     }
 
     public void Dispose()

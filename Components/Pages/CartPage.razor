@@ -176,11 +176,11 @@
     {
         if (!AuthService.IsAuthenticated)
         {
-            Navigation.NavigateTo("/login?returnUrl=/checkout");
+            Navigation.NavigateTo("/login?returnUrl=/checkout", forceLoad: false);
         }
         else
         {
-            Navigation.NavigateTo("/checkout");
+            Navigation.NavigateTo("/checkout", forceLoad: false);
         }
     }
 

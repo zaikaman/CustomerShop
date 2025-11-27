@@ -314,7 +314,7 @@ else
     private void HandleLogout()
     {
         AuthService.Logout();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/", forceLoad: false);
     }
 
     public class ProfileEditModel

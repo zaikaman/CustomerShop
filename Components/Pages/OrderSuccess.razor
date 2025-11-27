@@ -97,18 +97,20 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
+        // Tải đơn hàng trước, không phụ thuộc vào trạng thái đăng nhập
         order = await OrderService.GetOrderByIdAsync(OrderId);
         
-        // Verify order belongs to current customer
-        if (order != null && order.CustomerId != AuthService.CurrentCustomer?.CustomerId)
+        // Nếu không tìm thấy đơn hàng, redirect về trang chủ
+        if (order == null)
         {
-            Navigation.NavigateTo("/orders");
+            Navigation.NavigateTo("/", forceLoad: false);
+            return;
+        }
+        
+        // Nếu đã đăng nhập, kiểm tra đơn hàng có thuộc về user không
+        if (AuthService.IsAuthenticated && order.CustomerId != AuthService.CurrentCustomer?.CustomerId)
+        {
+            Navigation.NavigateTo("/orders", forceLoad: false);
         }
     }
 

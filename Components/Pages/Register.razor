@@ -109,7 +109,7 @@
         
         if (AuthService.IsAuthenticated)
         {
-            Navigation.NavigateTo(returnUrl ?? "/");
+            Navigation.NavigateTo(returnUrl ?? "/", forceLoad: false);
         }
     }
 
@@ -140,7 +140,7 @@
             {
                 successMessage = message;
                 await Task.Delay(1000);
-                Navigation.NavigateTo(returnUrl ?? "/");
+                Navigation.NavigateTo(returnUrl ?? "/", forceLoad: false);
             }
             else
             {

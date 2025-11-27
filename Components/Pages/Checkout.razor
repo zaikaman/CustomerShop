@@ -7,7 +7,17 @@
 
 <PageTitle>Thanh toán - Stuffsus</PageTitle>
 
-@if (!AuthService.IsAuthenticated)
+@if (isRedirecting)
+{
+    <div class="order-processing">
+        <div class="processing-content">
+            <div class="spinner-large"></div>
+            <h2>Đang xử lý đơn hàng...</h2>
+            <p>Vui lòng đợi trong giây lát</p>
+        </div>
+    </div>
+}
+else if (!AuthService.IsAuthenticated)
 {
     <div class="not-authenticated">
         <h2>Vui lòng đăng nhập</h2>
@@ -222,6 +232,7 @@ else
     private string? errorMessage;
     private bool isApplyingPromo = false;
     private bool isPlacingOrder = false;
+    private bool isRedirecting = false;
 
     protected override void OnInitialized()
     {
@@ -283,7 +294,7 @@ else
     {
         if (AuthService.CurrentCustomer == null)
         {
-            Navigation.NavigateTo("/login?returnUrl=/checkout");
+            Navigation.NavigateTo("/login?returnUrl=/checkout", forceLoad: false);
             return;
         }
 
@@ -300,12 +311,18 @@ else
                 paymentMethod
             );
 
+            // Đánh dấu đang chuyển hướng trước khi clear cart để tránh flash
+            isRedirecting = true;
+            isPlacingOrder = false;
+            StateHasChanged();
+            
             CartService.ClearCart();
-            Navigation.NavigateTo($"/order-success/{order.OrderId}");
+            Navigation.NavigateTo($"/order-success/{order.OrderId}", forceLoad: false);
         }
         catch (Exception ex)
         {
-            errorMessage = "Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.";
+            errorMessage = $"Đã xảy ra lỗi khi đặt hàng: {ex.Message}";
+            Console.WriteLine($"PlaceOrder Error: {ex}");
         }
         finally
         {
