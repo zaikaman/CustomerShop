@@ -231,21 +231,29 @@
     [SupplyParameterFromQuery]
     public string? Search { get; set; }
 
+    private int? _lastCategory;
+    private string? _lastSearch;
+
     protected override async Task OnInitializedAsync()
     {
         // Load từ query parameters
         selectedCategory = Category;
         searchTerm = Search ?? "";
+        _lastCategory = Category;
+        _lastSearch = Search;
         
         await LoadShopData();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Category != selectedCategory || Search != searchTerm)
+        // So sánh với giá trị query parameter trước đó, không phải searchTerm hiện tại
+        if (Category != _lastCategory || Search != _lastSearch)
         {
             selectedCategory = Category;
             searchTerm = Search ?? "";
+            _lastCategory = Category;
+            _lastSearch = Search;
             currentPage = 1;
             await LoadProducts();
         }
@@ -352,6 +360,10 @@
             queryParams.Add($"category={selectedCategory}");
         if (!string.IsNullOrEmpty(searchTerm))
             queryParams.Add($"search={Uri.EscapeDataString(searchTerm)}");
+        
+        // Cập nhật last values để tránh reload không cần thiết
+        _lastCategory = selectedCategory;
+        _lastSearch = searchTerm;
         
         var url = "/shop" + (queryParams.Any() ? "?" + string.Join("&", queryParams) : "");
         Navigation.NavigateTo(url, forceLoad: false);

@@ -92,19 +92,14 @@ namespace CustomerShop.Services
                     OrderId = order.OrderId,
                     Amount = totalAmount - discountAmount,
                     PaymentMethod = paymentMethod,
-                    // Nếu thanh toán qua chuyển khoản hoặc ví điện tử thì để pending, nhân viên sẽ xác nhận sau
-                    PaymentStatus = (paymentMethod == "bank_transfer" || paymentMethod == "e-wallet") ? "pending" : "completed",
+                    // Tất cả thanh toán đều để pending, nhân viên sẽ xác nhận sau
+                    PaymentStatus = "pending",
                     PaymentDate = DateTime.Now
                 };
                 context.Payments.Add(payment);
 
-                // Cập nhật trạng thái đơn hàng
-                // Nếu thanh toán qua chuyển khoản hoặc ví điện tử thì giữ pending, nhân viên sẽ xác nhận sau
-                if (paymentMethod != "bank_transfer" && paymentMethod != "e-wallet")
-                {
-                    order.Status = "paid";
-                    context.Orders.Update(order);
-                }
+                // Đơn hàng luôn ở trạng thái pending (chờ xử lý) để nhân viên xác nhận
+                // Không tự động chuyển sang paid
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
