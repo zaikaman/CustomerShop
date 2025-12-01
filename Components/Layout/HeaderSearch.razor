@@ -1,0 +1,72 @@
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+
+<div class="search-wrapper">
+    <button class="action-btn search-btn" @onclick="ToggleSearch">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+        </svg>
+    </button>
+
+    @if (showSearch)
+    {
+        <div class="search-overlay" @onclick="ToggleSearch">
+            <div class="search-bar-container" @onclick:stopPropagation>
+                <div class="search-content">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <input type="text" placeholder="Tìm kiếm sản phẩm..." 
+                           @bind="searchQuery" 
+                           @bind:event="oninput"
+                           @onkeydown="HandleSearchKeyDown"
+                           class="search-input-modern" 
+                           @ref="searchInput" />
+                    <button class="close-btn" @onclick="ToggleSearch">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool showSearch = false;
+    private string searchQuery = "";
+    private ElementReference searchInput;
+
+    private async Task ToggleSearch()
+    {
+        showSearch = !showSearch;
+        if (showSearch)
+        {
+            // Focus input when opened
+            await Task.Delay(100); // Wait for render
+            try { await searchInput.FocusAsync(); } catch {}
+        }
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            PerformSearch();
+        }
+    }
+
+    private void PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            Navigation.NavigateTo($"/shop?search={Uri.EscapeDataString(searchQuery)}");
+            showSearch = false;
+            searchQuery = "";
+        }
+    }
+}

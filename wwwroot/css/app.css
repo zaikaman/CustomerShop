@@ -371,50 +371,87 @@ button {
     color: var(--color-error);
 }
 
-/* Search Overlay */
+/* Search Overlay - Modern Redesign */
 .search-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 120px;
-    z-index: 200;
-    animation: fadeIn 0.2s ease;
-}
-
-.search-container {
     width: 100%;
-    max-width: 600px;
-    display: flex;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+    display: block; /* Override flex from previous */
+    padding-top: 0; /* Reset padding */
+}
+
+.search-bar-container {
     background-color: var(--color-white);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    box-shadow: var(--shadow-xl);
+    width: 100%;
+    padding: var(--space-xl) 0;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-100%);
+    animation: slideDown 0.3s forwards;
 }
 
-.search-input {
+.search-content {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 0 var(--space-lg);
+}
+
+.search-input-modern {
     flex: 1;
-    padding: var(--space-lg) var(--space-xl);
-    font-size: 1rem;
     border: none;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--color-black);
+    background: transparent;
     outline: none;
+    padding: var(--space-sm) 0;
 }
 
-.search-submit {
-    padding: var(--space-lg) var(--space-xl);
-    background-color: var(--color-black);
-    color: var(--color-white);
-    font-weight: 500;
-    transition: background-color var(--transition-fast);
+.search-input-modern::placeholder {
+    color: var(--color-light-gray);
+    font-family: var(--font-display);
+    opacity: 0.7;
 }
 
-.search-submit:hover {
-    background-color: var(--color-charcoal);
+.search-icon {
+    color: var(--color-gray);
+    width: 28px;
+    height: 28px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-gray);
+    padding: var(--space-xs);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: var(--color-black);
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* ========================================
