@@ -2,6 +2,7 @@
 @inject NavigationManager Navigation
 @inject ICartService CartService
 @inject ICustomerAuthService AuthService
+@rendermode InteractiveServer
 @implements IDisposable
 
 <ToastContainer />
@@ -100,14 +101,19 @@
 @code {
     private bool _isInitialized = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Load auth state ngay khi component khởi tạo để tránh flash content
+        await AuthService.LoadAuthStateFromStorageAsync();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_isInitialized)
         {
             _isInitialized = true;
-            // Tải dữ liệu từ LocalStorage sau khi render
+            // Tải giỏ hàng từ LocalStorage sau khi render
             await CartService.LoadCartFromStorageAsync();
-            await AuthService.LoadAuthStateFromStorageAsync();
             StateHasChanged();
         }
     }

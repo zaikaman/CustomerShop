@@ -3,7 +3,13 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-@if (AuthService.IsAuthenticated)
+@if (AuthService.IsLoading)
+{
+    <div class="auth-skeleton">
+        <div class="skeleton-circle"></div>
+    </div>
+}
+else if (AuthService.IsAuthenticated)
 {
     <div class="user-menu">
         <button class="user-btn" @onclick="ToggleUserMenu">
@@ -38,15 +44,6 @@ else
     protected override void OnInitialized()
     {
         AuthService.OnAuthStateChanged += HandleAuthStateChanged;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await AuthService.LoadAuthStateFromStorageAsync();
-            StateHasChanged();
-        }
     }
 
     private void HandleAuthStateChanged()

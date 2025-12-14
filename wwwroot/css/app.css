@@ -290,6 +290,31 @@ button {
     background-color: var(--color-charcoal);
 }
 
+/* Auth Skeleton Loading */
+.auth-skeleton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skeleton-circle {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(90deg, var(--color-silver) 25%, var(--color-pearl) 50%, var(--color-silver) 75%);
+    background-size: 200% 100%;
+    border-radius: var(--radius-full);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 /* User Menu */
 .user-menu {
     position: relative;

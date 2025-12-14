@@ -15,6 +15,7 @@ namespace CustomerShop.Services
         Task LoadAuthStateFromStorageAsync();
         Customer? CurrentCustomer { get; }
         bool IsAuthenticated { get; }
+        bool IsLoading { get; }
         Task LogoutAsync();
         event Action? OnAuthStateChanged;
     }
@@ -26,6 +27,7 @@ namespace CustomerShop.Services
         private Customer? _currentCustomer;
         private const string AUTH_STORAGE_KEY = "customer_auth";
         private bool _isLoaded = false;
+        private bool _isLoading = false;
 
         public event Action? OnAuthStateChanged;
 
@@ -37,6 +39,7 @@ namespace CustomerShop.Services
 
         public Customer? CurrentCustomer => _currentCustomer;
         public bool IsAuthenticated => _currentCustomer != null;
+        public bool IsLoading => _isLoading;
 
         /// <summary>
         /// Tải trạng thái đăng nhập từ LocalStorage
@@ -44,6 +47,9 @@ namespace CustomerShop.Services
         public async Task LoadAuthStateFromStorageAsync()
         {
             if (_isLoaded) return;
+            
+            _isLoading = true;
+            NotifyAuthStateChanged();
             
             try
             {
@@ -55,14 +61,18 @@ namespace CustomerShop.Services
                     if (customer != null)
                     {
                         _currentCustomer = customer;
-                        NotifyAuthStateChanged();
                     }
                 }
-                _isLoaded = true;
             }
             catch
             {
+                // Bỏ qua lỗi
+            }
+            finally
+            {
                 _isLoaded = true;
+                _isLoading = false;
+                NotifyAuthStateChanged();
             }
         }
 
