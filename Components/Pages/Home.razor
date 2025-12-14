@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IProductService ProductService
 @inject ICartService CartService
+@inject IToastService ToastService
 @inject NavigationManager Navigation
 
 <PageTitle>Stuffsus - Cửa hàng bán lẻ cao cấp</PageTitle>
@@ -203,6 +204,7 @@
     private void AddToCart(Product product)
     {
         CartService.AddToCart(product);
+        ToastService.ShowSuccess($"Đã thêm \"{product.ProductName}\" vào giỏ hàng", "Giỏ hàng");
     }
 
     private void HandleSearchKeyDown(KeyboardEventArgs e)
