@@ -27,6 +27,7 @@ builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 // Đăng ký Services
 builder.Services.AddScoped<IProductService, ProductService>();
+// CustomerAuthService là Scoped để mỗi circuit có auth state riêng
 builder.Services.AddScoped<ICustomerAuthService, CustomerAuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 

@@ -41,9 +41,11 @@ else
 @code {
     private bool showUserMenu = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         AuthService.OnAuthStateChanged += HandleAuthStateChanged;
+        // Load auth state ngay lập tức nếu chưa load
+        await AuthService.LoadAuthStateFromStorageAsync();
     }
 
     private void HandleAuthStateChanged()
